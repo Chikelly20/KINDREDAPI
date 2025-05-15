@@ -1,0 +1,21 @@
+HOW THE APP SHOULD FUNCTION AND DISPLAY
+I am going to be describing how the Kindred application will look like from the login page to the home page and beyond.
+During the development of this mobile application, our primary colors for our UI designs will:
+My color palette
+•	Primary Color: A (dark purple). This color is used prominently throughout the design for key elements like the app logo, headers, and accents.
+•	Secondary Color: A (white). This color is used for backgrounds, card surfaces, and secondary text.
+•	Accent Color: (dark purple). This is likely used for interactive elements like buttons, links, and highlights.
+
+		Firstly, we will begin with the login and sign-up page, after that we will move to the next page which the user will have to choose if he/she is signing up as a Job seeker or Employer. If they choose Jobseeker, they will be taken to another page where they will have to select if there are looking for Formal or informal jobs respectively. If it is a Formal job then they will move to another page where they will be required to fill a questionnaire which includes (what job are you looking for,list your previous work role, what are your qualifications, Do you speak any other language other than English? If yes list them, Can you provide a professional references? etc ) after filling, the user will click on a “Submit” button at the bottom right side of the page to take them to the home page. On the other hand, If it is an Informal job, then they will taken to another page where they will be required to fill a questionnaire which includes (What kind of jobs are you looking for?, List your working experience).after filling, the user will click on a “Submit” button at the bottom right side of the page to take them to the home page. After these questionnaires have then you should move to the home page.
+Likewise if they choose Employer, they will eventually move directly to the home page.
+
+	Once on the home page, we will have 2 home pages for both Job seeker and employer. For Job seekers, the home page will look like this:
+At the top left of your home page screen will be your profile picture alongside your name. At the top right of your home page screen will be the notification Icon (this notification icon we will receive messages from employers)
+
+	Beneath both the profile picture/users name and notification Icon we will have a search bar which will be used to search for available job opportunities.
+
+	Below the search bar, we are going to have the FOR YOU section. This section is going to be a horizontal slider which is going to include the various job opportunity with the job description including (Type of job, Location of the job, Salary, Contact, working days and time etc) and related jobs from our questionnaire using the skilled based matching algorithm and the K-NN algorithm to help us narrow down our search to our preferred job.
+
+	Below the FOR YOU section, we are going to have the RECENT JOB section. This section will also include other job opportunity with the job description including (Type of job, Location of the job, Salary, Contact, working days and time etc) and these information will scroll down the home page screen from top to bottom. This section will not include skilled based matching or K-NN algorithms 
+
+On each job description posted by an employer, it will carry and APPLY button for which if a job seeker ones to apply for a job, he/she will click on the APPLY button which will take them to the IN APP CHAT feature. 
