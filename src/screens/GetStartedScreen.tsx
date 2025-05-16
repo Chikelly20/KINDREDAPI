@@ -41,11 +41,6 @@ const GetStartedScreen = () => {
         />
       </View>
 
-      <Text style={[styles.title, { color: theme.primary }]}>Kindred</Text>
-      <Text style={[styles.subtitle, { color: theme.text }]}>
-        Connecting job seekers with employers
-      </Text>
-
       <View style={styles.featuresContainer}>
         <View style={[styles.featureItem, { backgroundColor: theme.card }]}>
           <FontAwesome name="search" size={24} color={theme.primary} />

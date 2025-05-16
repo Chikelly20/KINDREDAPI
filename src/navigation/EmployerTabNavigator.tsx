@@ -1,7 +1,8 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { Text, StyleSheet, Platform } from 'react-native';
 
 // Import screens
 import EmployerHomeScreen from '../screens/employer/HomeScreen';
@@ -17,36 +18,48 @@ import { EmployerStackParamList } from '../navigation';
 
 const Tab = createBottomTabNavigator<EmployerStackParamList>();
 
-const EmployerTabNavigator = () => {
+const EmployerTabNavigator: React.FC = () => {
   const { theme } = useTheme();
   
+  // Using 'as any' to bypass the TypeScript error with the 'id' property
+  // This is a known issue with React Navigation's TypeScript definitions
   return (
     <Tab.Navigator
+      // @ts-ignore - Workaround for 'Property id is missing' TypeScript error
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName: string;
-          
           if (route.name === 'Home') {
-            iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'Chat') {
-            iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
-          } else if (route.name === 'Profile') {
-            iconName = focused ? 'person' : 'person-outline';
-          } else if (route.name === 'Settings') {
-            iconName = focused ? 'settings' : 'settings-outline';
+            return <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />;
           } else if (route.name === 'ManageApplications') {
-            iconName = focused ? 'briefcase' : 'briefcase-outline';
-          } else {
-            iconName = 'help-circle-outline';
+            return <FontAwesome5 name="briefcase" size={size} color={color} />;
+          } else if (route.name === 'Chat') {
+            return <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={size} color={color} />;
+          } else if (route.name === 'Profile') {
+            return <Ionicons name={focused ? 'person' : 'person-outline'} size={size} color={color} />;
+          } else if (route.name === 'Settings') {
+            return <Ionicons name={focused ? 'settings' : 'settings-outline'} size={size} color={color} />;
           }
+          return <Ionicons name="help-circle-outline" size={size} color={color} />;
+        },
+        tabBarLabel: ({ focused, color }) => {
+          let label = '';
+          if (route.name === 'Home') label = 'Home';
+          else if (route.name === 'ManageApplications') label = 'Applications';
+          else if (route.name === 'Chat') label = 'Chat';
+          else if (route.name === 'Profile') label = 'Profile';
+          else if (route.name === 'Settings') label = 'Settings';
           
-          return <Ionicons name={iconName as any} size={size} color={color} />;
+          return <Text style={[styles.tabBarLabel, { color }]}>{label}</Text>;
         },
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: 'gray',
         tabBarStyle: {
           backgroundColor: theme.background,
           borderTopColor: theme.border,
+          height: Platform.OS === 'ios' ? 80 : 60,
+          paddingBottom: Platform.OS === 'ios' ? 15 : 5,
+          paddingHorizontal: 10,
+          borderTopWidth: 1,
         },
         headerStyle: {
           backgroundColor: theme.primary,
@@ -120,5 +133,13 @@ const EmployerTabNavigator = () => {
     </Tab.Navigator>
   );
 };
+
+const styles = StyleSheet.create({
+  tabBarLabel: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginBottom: 3,
+  },
+});
 
 export default EmployerTabNavigator;

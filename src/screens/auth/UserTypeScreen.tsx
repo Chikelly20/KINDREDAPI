@@ -7,8 +7,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
-  Alert
+  Alert,
+  Dimensions,
+  StatusBar,
+  Platform
 } from 'react-native';
+import { FontAwesome } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../../context/AuthContext';
@@ -22,6 +26,9 @@ const UserTypeScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
   const [selectedType, setSelectedType] = useState<'jobseeker' | 'employer' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Get screen dimensions for responsive design
+  const { width, height } = Dimensions.get('window');
 
   const handleContinue = async () => {
     if (!selectedType) {
@@ -65,6 +72,11 @@ const UserTypeScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <StatusBar
+        backgroundColor={theme.background}
+        barStyle={theme.text === '#000000' ? 'dark-content' : 'light-content'}
+      />
+      
       <View style={styles.contentContainer}>
         <View style={styles.headerContainer}>
           <Text style={[styles.title, { color: theme.text }]}>What are you looking for?</Text>
@@ -78,28 +90,36 @@ const UserTypeScreen: React.FC<Props> = ({ navigation }) => {
             style={[
               styles.optionCard,
               {
-                backgroundColor: selectedType === 'jobseeker' ? theme.primary : theme.secondary,
-                borderColor: selectedType === 'jobseeker' ? theme.primary : theme.border
+                backgroundColor: theme.secondary,
+                borderColor: selectedType === 'jobseeker' ? theme.primary : theme.border,
+                borderWidth: selectedType === 'jobseeker' ? 3 : 1,
+                shadowColor: theme.text,
+                elevation: selectedType === 'jobseeker' ? 8 : 2,
               }
             ]}
             onPress={() => setSelectedType('jobseeker')}
           >
             <View style={styles.optionIconContainer}>
-              {/* Replace with actual icon */}
               <View
                 style={[
                   styles.iconPlaceholder,
                   {
-                    backgroundColor: selectedType === 'jobseeker' ? theme.secondary : theme.primary
+                    backgroundColor: theme.primary
                   }
                 ]}
-              />
+              >
+                <FontAwesome 
+                  name="user" 
+                  size={36} 
+                  color="#FFFFFF" 
+                />
+              </View>
             </View>
             <Text
               style={[
                 styles.optionTitle,
                 {
-                  color: selectedType === 'jobseeker' ? theme.secondary : theme.text
+                  color: theme.text
                 }
               ]}
             >
@@ -109,7 +129,7 @@ const UserTypeScreen: React.FC<Props> = ({ navigation }) => {
               style={[
                 styles.optionDescription,
                 {
-                  color: selectedType === 'jobseeker' ? theme.secondary : theme.text
+                  color: theme.text
                 }
               ]}
             >
@@ -121,28 +141,36 @@ const UserTypeScreen: React.FC<Props> = ({ navigation }) => {
             style={[
               styles.optionCard,
               {
-                backgroundColor: selectedType === 'employer' ? theme.primary : theme.secondary,
-                borderColor: selectedType === 'employer' ? theme.primary : theme.border
+                backgroundColor: theme.secondary,
+                borderColor: selectedType === 'employer' ? theme.primary : theme.border,
+                borderWidth: selectedType === 'employer' ? 3 : 1,
+                shadowColor: theme.text,
+                elevation: selectedType === 'employer' ? 8 : 2,
               }
             ]}
             onPress={() => setSelectedType('employer')}
           >
             <View style={styles.optionIconContainer}>
-              {/* Replace with actual icon */}
               <View
                 style={[
                   styles.iconPlaceholder,
                   {
-                    backgroundColor: selectedType === 'employer' ? theme.secondary : theme.primary
+                    backgroundColor: theme.primary
                   }
                 ]}
-              />
+              >
+                <FontAwesome 
+                  name="briefcase" 
+                  size={36} 
+                  color="#FFFFFF" 
+                />
+              </View>
             </View>
             <Text
               style={[
                 styles.optionTitle,
                 {
-                  color: selectedType === 'employer' ? theme.secondary : theme.text
+                  color: theme.text
                 }
               ]}
             >
@@ -152,7 +180,7 @@ const UserTypeScreen: React.FC<Props> = ({ navigation }) => {
               style={[
                 styles.optionDescription,
                 {
-                  color: selectedType === 'employer' ? theme.secondary : theme.text
+                  color: theme.text
                 }
               ]}
             >
@@ -166,7 +194,9 @@ const UserTypeScreen: React.FC<Props> = ({ navigation }) => {
             styles.continueButton,
             {
               backgroundColor: theme.primary,
-              opacity: selectedType ? 1 : 0.7
+              opacity: selectedType ? 1 : 0.7,
+              shadowColor: theme.text,
+              elevation: selectedType ? 5 : 0,
             }
           ]}
           onPress={handleContinue}
@@ -180,6 +210,8 @@ const UserTypeScreen: React.FC<Props> = ({ navigation }) => {
             </Text>
           )}
         </TouchableOpacity>
+        
+
       </View>
     </SafeAreaView>
   );
@@ -189,24 +221,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+
   contentContainer: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingVertical: 40,
+    paddingVertical: 20,
     justifyContent: 'space-between',
   },
   headerContainer: {
-    marginBottom: 40,
+    marginBottom: 30,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 10,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 18,
     textAlign: 'center',
+    opacity: 0.8,
   },
   optionsContainer: {
     flex: 1,
@@ -214,42 +248,82 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   optionCard: {
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
     padding: 24,
     marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   optionIconContainer: {
     marginBottom: 16,
     alignItems: 'center',
   },
   iconPlaceholder: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  roleIcon: {
+    width: 50,
+    height: 50,
+    tintColor: '#FFFFFF',
   },
   optionTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 10,
+    textAlign: 'center',
   },
   optionDescription: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 16,
+    lineHeight: 22,
+    textAlign: 'center',
   },
   continueButton: {
     height: 56,
-    borderRadius: 8,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 24,
+    marginBottom: 20,
+    ...Platform.select({
+      ios: {
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   continueButtonText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
+
 });
 
 export default UserTypeScreen; 
