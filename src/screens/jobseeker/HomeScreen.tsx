@@ -127,6 +127,18 @@ const JobSeekerHomeScreen: React.FC<Props> = ({ navigation }) => {
     navigation.navigate('Chat', { jobId, employerId });
   };
 
+  const handleSelectJobType = () => {
+    navigation.navigate('JobType');
+  };
+
+  const handleFormalQuestionnaire = () => {
+    navigation.navigate('FormalQuestionnaire');
+  };
+
+  const handleInformalQuestionnaire = () => {
+    navigation.navigate('InformalQuestionnaire');
+  };
+
   const renderForYouItem = ({ item }: { item: JobPost }) => (
     <View 
       style={[
@@ -227,11 +239,11 @@ const JobSeekerHomeScreen: React.FC<Props> = ({ navigation }) => {
           <View 
             style={[
               styles.profilePicture, 
-              { backgroundColor: theme.primary, borderColor: theme.secondary }
+              { backgroundColor: theme.primary, borderColor: theme.border }
             ]}
           >
             <Text style={[styles.profileInitial, { color: theme.secondary }]}>
-              {user?.displayName?.charAt(0) || 'U'}
+              {user?.displayName ? user.displayName.charAt(0).toUpperCase() : '?'}
             </Text>
           </View>
           <View>
@@ -240,17 +252,12 @@ const JobSeekerHomeScreen: React.FC<Props> = ({ navigation }) => {
             </Text>
             {profileType && (
               <Text style={[styles.profileType, { color: theme.text }]}>
-                {profileType === 'formal' ? 'Professional Job Seeker' : 'Casual Job Seeker'}
+                {profileType === 'formal' ? 'Formal Job Seeker' : 'Informal Job Seeker'}
               </Text>
             )}
-            {profileData && profileType === 'formal' && (
-              <Text style={[styles.profileDetail, { color: theme.text }]}>
-                {profileData.jobSeeking}
-              </Text>
-            )}
-            {profileData && profileType === 'informal' && (
-              <Text style={[styles.profileDetail, { color: theme.text }]}>
-                {profileData.jobSeeking}
+            {profileData?.jobSeeking && (
+              <Text style={[styles.profileDetail, { color: theme.text }]} numberOfLines={1}>
+                Looking for: {profileData.jobSeeking}
               </Text>
             )}
           </View>
@@ -270,15 +277,48 @@ const JobSeekerHomeScreen: React.FC<Props> = ({ navigation }) => {
             { backgroundColor: theme.secondary, borderColor: theme.border }
           ]}
         >
-          <Ionicons name="search-outline" size={20} color={theme.text} />
+          <Ionicons name="search" size={20} color={theme.text} />
           <TextInput
             style={[styles.searchInput, { color: theme.text }]}
-            placeholder="Search for jobs..."
+            placeholder="Search jobs..."
             placeholderTextColor={theme.text}
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={handleSearch}
           />
+        </View>
+      </View>
+
+      {/* Questionnaire Access Buttons */}
+      <View style={styles.questionnaireContainer}>
+        <Text style={[styles.questionnaireTitle, { color: theme.text }]}>Profile Options</Text>
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            style={[styles.questionnaireButton, { backgroundColor: theme.primary }]}
+            onPress={handleSelectJobType}
+          >
+            <Text style={[styles.buttonText, { color: theme.secondary }]}>Change Job Type</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.questionnaireButton, { backgroundColor: profileType === 'formal' ? theme.primary : theme.card }]}
+            onPress={handleFormalQuestionnaire}
+            disabled={profileType === 'formal'}
+          >
+            <Text style={[styles.buttonText, { color: profileType === 'formal' ? theme.secondary : theme.text }]}>
+              Formal Profile
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.questionnaireButton, { backgroundColor: profileType === 'informal' ? theme.primary : theme.card }]}
+            onPress={handleInformalQuestionnaire}
+            disabled={profileType === 'informal'}
+          >
+            <Text style={[styles.buttonText, { color: profileType === 'informal' ? theme.secondary : theme.text }]}>
+              Informal Profile
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
       
@@ -399,6 +439,36 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 8,
     fontSize: 16,
+  },
+  questionnaireContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  questionnaireTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  questionnaireButton: {
+    flex: 1,
+    minWidth: '30%',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  buttonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   contentContainer: {
     flex: 1,

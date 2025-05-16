@@ -40,22 +40,31 @@ const SignupScreen: React.FC<Props> = ({ navigation, route }) => {
       return;
     }
 
+    if (!userType) {
+      Alert.alert('Error', 'Please select a user type first');
+      navigation.navigate('UserType');
+      return;
+    }
+
     try {
       setIsLoading(true);
-      await signUp(email, password, name);
+      // Pass the userType to signUp to store it with the user profile
+      await signUp(email, password, name, userType);
       
       // Navigate to the appropriate screen based on user type
-      if (userType) {
-        if (userType === 'jobseeker') {
-          // Navigate to JobType screen for job seekers
-          navigation.navigate('JobType');
-        } else if (userType === 'employer') {
-          // Navigate to EmployerHome for employers
-          navigation.navigate('EmployerHome');
-        }
-      } else {
-        // No user type was selected, navigate to UserType screen
-        navigation.navigate('UserType');
+      if (userType === 'jobseeker') {
+        // For job seekers, always navigate to JobType screen first
+        // This ensures they complete the job type selection process
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'JobType' }]
+        });
+      } else if (userType === 'employer') {
+        // For employers, navigate directly to the employer home screen
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'EmployerHome' }]
+        });
       }
     } catch (error) {
       if (error instanceof Error) {

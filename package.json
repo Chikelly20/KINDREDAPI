@@ -33,6 +33,10 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
+    "@types/cors": "^2.8.18",
+    "@types/express": "^5.0.1",
+    "@types/firebase": "^2.4.32",
+    "@types/node": "^22.15.18",
     "@types/react": "~19.0.10",
     "typescript": "~5.8.3"
   },

@@ -27,6 +27,7 @@ const GetStartedScreen = () => {
   };
 
   const handleSignup = () => {
+    // Always navigate to UserType screen first for user to select their role
     navigation.navigate('UserType');
   };
 

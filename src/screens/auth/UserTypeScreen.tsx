@@ -36,10 +36,20 @@ const UserTypeScreen: React.FC<Props> = ({ navigation }) => {
       
       // Check if user is already authenticated
       if (user) {
-        // User is already logged in, just go back to home
-        navigation.navigate('Home');
+        // User is already logged in, navigate to the appropriate home screen based on user type
+        if (selectedType === 'jobseeker') {
+          // If jobseeker, check if they've completed job type selection
+          if (user.jobSeekerType) {
+            navigation.navigate('JobSeekerHome');
+          } else {
+            // If they haven't selected job type yet, take them to job type selection
+            navigation.navigate('JobType');
+          }
+        } else if (selectedType === 'employer') {
+          navigation.navigate('EmployerHome');
+        }
       } else {
-        // User is not logged in, continue to signup
+        // User is not logged in, continue to signup with the selected user type
         navigation.navigate('Signup', { userType: selectedType });
       }
     } catch (error) {

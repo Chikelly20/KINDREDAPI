@@ -64,13 +64,16 @@ const InformalQuestionnaireScreen: React.FC<Props> = ({ navigation }) => {
         { 
           informalQuestionnaire: formData,
           profileType: 'informal',
-          profileCompleted: true,
-        }, 
-        { merge: true }
+          profileCompleted: true
+        },
+        { merge: true } // Use merge as a separate parameter as intended
       );
       
-      // Navigate to home screen
-      navigation.navigate('JobSeekerHome');
+      // Navigate to job seeker home screen with reset to prevent going back
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'JobSeekerHome' }]
+      });
     } catch (error) {
       if (error instanceof Error) {
         Alert.alert('Error', error.message);

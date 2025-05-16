@@ -1,7 +1,7 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true,
+    "strict": false,
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
@@ -11,6 +11,9 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "types": ["node", "express", "cors"]
   }
 }

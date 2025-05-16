@@ -14,11 +14,23 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { EmployerStackParamList } from '../../navigation';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, DocumentData } from 'firebase/firestore';
 import { db, userAPI } from '../../services/firebase';
 import { Ionicons } from '@expo/vector-icons';
 
 type Props = NativeStackScreenProps<EmployerStackParamList, 'ManageApplications'>;
+
+interface ChatData {
+  employerId: string;
+  jobSeekerId: string;
+  jobId: string;
+  jobTitle: string;
+  jobSeekerName: string;
+  createdAt: any;
+  lastMessage: string;
+  lastMessageAt: any;
+  updatedAt: any;
+}
 
 interface JobApplication {
   id: string;
@@ -75,7 +87,7 @@ const ManageApplicationsScreen: React.FC<Props> = ({ navigation }) => {
       const applicantIds: string[] = [];
       
       querySnapshot.forEach((doc) => {
-        const data = doc.data();
+        const data = doc.data() as ChatData;
         const applicantId = data.jobSeekerId || '';
         
         if (applicantId && !applicantIds.includes(applicantId)) {

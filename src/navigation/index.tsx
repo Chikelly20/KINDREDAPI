@@ -11,15 +11,15 @@ import GetStartedScreen from '../screens/GetStartedScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
 import SignupScreen from '../screens/auth/SignupScreen';
 import UserTypeScreen from '../screens/auth/UserTypeScreen';
-import HomeScreen from '../screens/HomeScreen';
+import HomeScreen from '../screens/HomeScreen'; // Re-add HomeScreen import
 import JobTypeScreen from '../screens/jobseeker/JobTypeScreen';
 import FormalQuestionnaireScreen from '../screens/jobseeker/FormalQuestionnaireScreen';
 import InformalQuestionnaireScreen from '../screens/jobseeker/InformalQuestionnaireScreen';
-import EmployerHomeScreen from '../screens/employer/HomeScreen';
 
 // Import tab navigator
 import JobSeekerTabNavigator from './JobSeekerTabNavigator';
 import EmployerTabNavigator from './EmployerTabNavigator';
+
 // Define navigation types directly here to avoid import issues
 export type RootStackParamList = {
   Splash: undefined;
@@ -27,7 +27,7 @@ export type RootStackParamList = {
   Login: undefined;
   Signup: { userType?: 'jobseeker' | 'employer' };
   UserType: undefined;
-  Home: undefined;
+  Home: undefined; // Add Home screen back to the navigation stack
   JobType: undefined;
   FormalQuestionnaire: undefined;
   InformalQuestionnaire: undefined;
@@ -58,9 +58,6 @@ export type EmployerStackParamList = {
   Settings: undefined;
   JobSeekerProfileView: { userId: string };
 };
-
-// Export types for use in other components
-// (defined directly in this file)
 
 // Create stack navigator
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -105,7 +102,7 @@ const Navigation = () => {
       notification: theme.primary,
     }
   };
-  
+
   return (
     <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator
@@ -118,89 +115,175 @@ const Navigation = () => {
       >
         {user ? (
           // Authenticated user routes
+          user.userType === 'jobseeker' ? (
+            // Job seeker routes - always include all screens
+            <>
+              <Stack.Screen 
+                name="JobSeekerHome" 
+                component={JobSeekerTabNavigator} 
+                options={{ 
+                  headerShown: false,
+                  headerBackVisible: false
+                }}
+              />
+              <Stack.Screen 
+                name="Home" 
+                component={HomeScreen} 
+                options={{ headerShown: true, title: 'Kindred' }}
+              />
+              <Stack.Screen 
+                name="JobType" 
+                component={JobTypeScreen} 
+                options={{ 
+                  headerShown: true,
+                  title: 'Select Job Type',
+                  headerTintColor: theme.secondary
+                }}
+              />
+              <Stack.Screen 
+                name="FormalQuestionnaire" 
+                component={FormalQuestionnaireScreen} 
+                options={{ 
+                  headerShown: true,
+                  title: 'Formal Job Profile',
+                  headerTintColor: theme.secondary
+                }}
+              />
+              <Stack.Screen 
+                name="InformalQuestionnaire" 
+                component={InformalQuestionnaireScreen} 
+                options={{ 
+                  headerShown: true,
+                  title: 'Informal Job Profile',
+                  headerTintColor: theme.secondary
+                }}
+              />
+              <Stack.Screen 
+                name="UserType" 
+                component={UserTypeScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen 
+                name="EmployerHome" 
+                component={EmployerTabNavigator} 
+                options={{ headerShown: false }}
+              />
+            </>
+          ) : user.userType === 'employer' ? (
+            // Employer routes
+            <>
+              <Stack.Screen 
+                name="EmployerHome" 
+                component={EmployerTabNavigator} 
+                options={{ 
+                  headerShown: false,
+                  headerBackVisible: false
+                }}
+              />
+              <Stack.Screen 
+                name="Home" 
+                component={HomeScreen} 
+                options={{ headerShown: true, title: 'Kindred' }}
+              />
+              <Stack.Screen 
+                name="UserType" 
+                component={UserTypeScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen 
+                name="JobSeekerHome" 
+                component={JobSeekerTabNavigator} 
+                options={{ headerShown: false }}
+              />
+            </>
+          ) : (
+            // User hasn't set their type yet
+            <>
+              <Stack.Screen 
+                name="UserType" 
+                component={UserTypeScreen}
+                options={{ 
+                  headerShown: false,
+                  gestureEnabled: false // Prevent going back
+                }}
+              />
+              <Stack.Screen 
+                name="JobSeekerHome" 
+                component={JobSeekerTabNavigator} 
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen 
+                name="EmployerHome" 
+                component={EmployerTabNavigator} 
+                options={{ headerShown: false }}
+              />
+            </>
+          )
+        ) : (
+          // Unauthenticated user routes - clear sequential flow
           <>
             <Stack.Screen 
-              name="Home" 
-              component={HomeScreen} 
-              options={{ headerShown: true, title: 'Kindred' }}
-            />
-            <Stack.Screen 
-              name="JobSeekerHome" 
-              component={JobSeekerTabNavigator} 
+              name="Splash" 
+              component={SplashScreen} 
               options={{ 
                 headerShown: false,
-                headerBackVisible: false
+                gestureEnabled: false // Prevent going back
               }}
             />
             <Stack.Screen 
-              name="EmployerHome" 
-              component={EmployerTabNavigator} 
+              name="GetStarted" 
+              component={GetStartedScreen} 
               options={{ 
                 headerShown: false,
-                headerBackVisible: false
-              }}
-            />
-            <Stack.Screen 
-              name="JobType" 
-              component={JobTypeScreen} 
-              options={{ 
-                headerShown: false
-              }}
-            />
-            <Stack.Screen 
-              name="FormalQuestionnaire" 
-              component={FormalQuestionnaireScreen} 
-              options={{ 
-                headerShown: false
-              }}
-            />
-            <Stack.Screen 
-              name="InformalQuestionnaire" 
-              component={InformalQuestionnaireScreen} 
-              options={{ 
-                headerShown: false
+                gestureEnabled: false // Prevent going back
               }}
             />
             <Stack.Screen 
               name="UserType" 
               component={UserTypeScreen}
               options={{ 
-                headerShown: false
-              }}
-            />
-          </>
-        ) : (
-          // Unauthenticated user routes
-          <>
-            <Stack.Screen 
-              name="Splash" 
-              component={SplashScreen} 
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen 
-              name="GetStarted" 
-              component={GetStartedScreen} 
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen 
-              name="Login" 
-              component={LoginScreen} 
-              options={{ 
-                headerShown: false
+                headerShown: false,
+                gestureEnabled: false // Prevent going back
               }}
             />
             <Stack.Screen 
               name="Signup" 
               component={SignupScreen} 
               options={{ 
-                headerShown: false
+                headerShown: false,
+                gestureEnabled: true // Allow going back to user type selection
               }}
             />
             <Stack.Screen 
-              name="UserType" 
-              component={UserTypeScreen}
+              name="Login" 
+              component={LoginScreen} 
               options={{ 
-                headerShown: false
+                headerShown: false,
+                gestureEnabled: true // Allow going back to get started
+              }}
+            />
+            <Stack.Screen 
+              name="JobType" 
+              component={JobTypeScreen} 
+              options={{ 
+                headerShown: false,
+                gestureEnabled: false // Prevent going back
+              }}
+            />
+            <Stack.Screen 
+              name="FormalQuestionnaire" 
+              component={FormalQuestionnaireScreen} 
+              options={{ 
+                headerShown: false,
+                gestureEnabled: false // Prevent going back
+              }}
+            />
+            <Stack.Screen 
+              name="InformalQuestionnaire" 
+              component={InformalQuestionnaireScreen} 
+              options={{ 
+                headerShown: false,
+                gestureEnabled: false // Prevent going back
               }}
             />
           </>
@@ -210,4 +293,4 @@ const Navigation = () => {
   );
 };
 
-export default Navigation; 
+export default Navigation;

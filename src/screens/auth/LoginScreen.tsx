@@ -57,7 +57,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   // Email validation function
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    return Boolean(emailRegex.test(email));
   };
 
   const handleLogin = async () => {

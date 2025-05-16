@@ -29,7 +29,7 @@ const EmployerTabNavigator = () => {
           if (route.name === 'Home') {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Chat') {
-            iconName = focused ? 'chatbubble' : 'chatbubble-outline';
+            iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
           } else if (route.name === 'Settings') {
@@ -43,45 +43,60 @@ const EmployerTabNavigator = () => {
           return <Ionicons name={iconName as any} size={size} color={color} />;
         },
         tabBarActiveTintColor: theme.primary,
-        tabBarInactiveTintColor: theme.text,
+        tabBarInactiveTintColor: 'gray',
         tabBarStyle: {
-          backgroundColor: theme.card,
+          backgroundColor: theme.background,
           borderTopColor: theme.border,
-          paddingHorizontal: 0,
         },
-        tabBarItemStyle: {
-          flex: 1,
-          justifyContent: 'center',
-          paddingHorizontal: 0,
+        headerStyle: {
+          backgroundColor: theme.primary,
         },
-        headerShown: false,
+        headerTintColor: theme.secondary,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
       })}
     >
       <Tab.Screen 
         name="Home" 
         component={EmployerHomeScreen} 
-        options={{ title: 'Dashboard' }} 
+        options={{ 
+          title: 'Home',
+          headerTitle: 'Dashboard'
+        }} 
       />
       <Tab.Screen 
         name="ManageApplications" 
         component={ManageApplicationsScreen} 
-        options={{ title: 'Applications' }} 
+        options={{ 
+          title: 'Applications',
+          headerTitle: 'Manage Applications'
+        }} 
       />
       <Tab.Screen 
         name="Chat" 
         component={ChatScreen} 
         initialParams={{ applicantId: '', jobId: '' }}
-        options={{ title: 'Messages' }}
+        options={{ 
+          title: 'Chat',
+          headerTitle: 'Messages'
+        }}
       />
       <Tab.Screen 
         name="Profile" 
         component={ProfileScreen} 
-        options={{ title: 'Profile' }}
+        options={{ 
+          title: 'Profile',
+          headerTitle: 'My Profile'
+        }}
       />
       <Tab.Screen 
         name="Settings" 
         component={SettingsScreen} 
-        options={{ title: 'Settings' }}
+        options={{ 
+          title: 'Settings',
+          headerTitle: 'Settings'
+        }}
       />
       <Tab.Screen 
         name="JobSeekerProfileView" 

@@ -3,7 +3,10 @@
  * Handles data access to Firebase Firestore database
  */
 
-import { firestore } from '../../services/firebase';
+import { getFirestore, DocumentData, QueryDocumentSnapshot } from 'firebase-admin/firestore';
+import '../config/firebase'; // This will initialize Firebase
+
+const firestore = getFirestore();
 import { Job, JobSeeker } from '../models/types';
 
 /**
@@ -13,7 +16,7 @@ import { Job, JobSeeker } from '../models/types';
 export const getAllJobs = async (): Promise<Job[]> => {
   try {
     const jobsSnapshot = await firestore.collection('jobs').get();
-    return jobsSnapshot.docs.map(doc => ({
+    return jobsSnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
       id: doc.id,
       ...doc.data()
     } as Job));
@@ -38,7 +41,7 @@ export const getJobById = async (jobId: string): Promise<Job | null> => {
       id: jobDoc.id,
       ...jobDoc.data()
     } as Job;
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error fetching job ${jobId}:`, error);
     throw error;
   }
@@ -54,11 +57,11 @@ export const getAllJobSeekers = async (): Promise<JobSeeker[]> => {
       .where('userType', '==', 'jobseeker')
       .get();
     
-    return jobSeekersSnapshot.docs.map(doc => ({
+    return jobSeekersSnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
       id: doc.id,
       ...doc.data()
     } as JobSeeker));
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching job seekers:', error);
     throw error;
   }
@@ -79,7 +82,7 @@ export const getJobSeekerById = async (jobSeekerId: string): Promise<JobSeeker |
       id: jobSeekerDoc.id,
       ...jobSeekerDoc.data()
     } as JobSeeker;
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error fetching job seeker ${jobSeekerId}:`, error);
     throw error;
   }
@@ -96,11 +99,11 @@ export const getJobsByEmployerId = async (employerId: string): Promise<Job[]> =>
       .where('employerId', '==', employerId)
       .get();
     
-    return jobsSnapshot.docs.map(doc => ({
+    return jobsSnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
       id: doc.id,
       ...doc.data()
     } as Job));
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error fetching jobs for employer ${employerId}:`, error);
     throw error;
   }

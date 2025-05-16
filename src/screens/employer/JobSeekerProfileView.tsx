@@ -14,7 +14,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTheme } from '../../context/ThemeContext';
 import { EmployerStackParamList } from '../../navigation';
 import { Ionicons } from '@expo/vector-icons';
-import { collection, query, where, getDocs, limit, getDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, DocumentData, getDoc, doc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 
 type Props = NativeStackScreenProps<EmployerStackParamList, 'JobSeekerProfileView'>;
@@ -83,7 +83,7 @@ const JobSeekerProfileView: React.FC<Props> = ({ route, navigation }) => {
           
           if (!chatsSnapshot.empty) {
             const chatDoc = chatsSnapshot.docs[0];
-            const chatData = chatDoc.data();
+            const chatData = chatDoc.data() as DocumentData;
             
             // Create a basic profile with the information from chat
             setProfile({

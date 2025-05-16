@@ -70,13 +70,16 @@ const FormalQuestionnaireScreen: React.FC<Props> = ({ navigation }) => {
         { 
           formalQuestionnaire: formData,
           profileType: 'formal',
-          profileCompleted: true,
-        }, 
-        { merge: true }
+          profileCompleted: true
+        },
+        { merge: true } // Use merge as a separate parameter as intended
       );
       
-      // Navigate to job seeker home screen
-      navigation.navigate('JobSeekerHome');
+      // Navigate to job seeker home screen with reset to prevent going back
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'JobSeekerHome' }]
+      });
     } catch (error) {
       if (error instanceof Error) {
         Alert.alert('Error', error.message);

@@ -18,7 +18,7 @@ interface UserData {
 interface AuthContextType {
   user: UserData | null;
   isLoading: boolean;
-  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string, userType?: UserType) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   setUserType: (userType: UserType) => Promise<void>;
@@ -78,39 +78,123 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, name: string) => {
-    try {
-      // Create user with email and password
-      const result = await auth.createUserWithEmailAndPassword(email, password);
-      const currentUser = result.user;
-      
-      // Safety check
-      if (!currentUser) {
-        throw new Error('Failed to create user');
+  const signUp = async (email: string, password: string, name: string, userType: UserType = null) => {
+    // Maximum number of retry attempts
+    const maxRetries = 3;
+    // Initial delay in milliseconds (increases with each retry)
+    let retryDelay = 1000;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Create user with email and password
+        const result = await auth.createUserWithEmailAndPassword(email, password);
+        const currentUser = result.user;
+        
+        // Safety check
+        if (!currentUser) {
+          throw new Error('Failed to create user');
+        }
+        
+        // Update the user's profile
+        await currentUser.updateProfile({ displayName: name });
+        
+        // Create user document in Firestore
+        await db.collection('users').doc(currentUser.uid).set({
+          email,
+          displayName: name,
+          userType: userType, // Use the provided userType instead of null
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        return; // Success - exit the function
+      } catch (error: any) {
+        console.error(`Sign-up attempt ${attempt + 1} failed:`, error);
+        
+        // Check if it's a network error
+        if (error.code === 'auth/network-request-failed') {
+          // If this is the last attempt, throw the error
+          if (attempt === maxRetries - 1) {
+            Alert.alert(
+              'Network Error',
+              'Unable to connect to authentication servers. Please check your internet connection and try again.',
+              [{ text: 'OK' }]
+            );
+            throw error;
+          }
+          
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          // Increase the delay for next attempt (exponential backoff)
+          retryDelay *= 1.5;
+          // Continue to next retry attempt
+          continue;
+        }
+        
+        // For other errors, provide user-friendly messages
+        if (error.code === 'auth/email-already-in-use') {
+          Alert.alert('Email In Use', 'This email address is already in use. Please use a different email or try logging in.');
+        } else if (error.code === 'auth/invalid-email') {
+          Alert.alert('Invalid Email', 'Please enter a valid email address.');
+        } else if (error.code === 'auth/weak-password') {
+          Alert.alert('Weak Password', 'Your password is too weak. Please use a stronger password with at least 6 characters.');
+        } else {
+          Alert.alert('Sign Up Error', 'An error occurred during sign up. Please try again later.');
+        }
+        
+        throw error;
       }
-      
-      // Update the user's profile
-      await currentUser.updateProfile({ displayName: name });
-      
-      // Create user document in Firestore
-      await db.collection('users').doc(currentUser.uid).set({
-        email,
-        displayName: name,
-        userType: null,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-    } catch (error) {
-      console.error('Error signing up:', error);
-      throw error;
     }
   };
 
   const signIn = async (email: string, password: string) => {
-    try {
-      await auth.signInWithEmailAndPassword(email, password);
-    } catch (error) {
-      console.error('Error signing in:', error);
-      throw error;
+    // Maximum number of retry attempts
+    const maxRetries = 3;
+    // Initial delay in milliseconds (increases with each retry)
+    let retryDelay = 1000;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Attempt to sign in
+        await auth.signInWithEmailAndPassword(email, password);
+        return; // Success - exit the function
+      } catch (error: any) {
+        console.error(`Sign-in attempt ${attempt + 1} failed:`, error);
+        
+        // Check if it's a network error
+        if (error.code === 'auth/network-request-failed') {
+          // If this is the last attempt, throw the error
+          if (attempt === maxRetries - 1) {
+            Alert.alert(
+              'Network Error',
+              'Unable to connect to authentication servers. Please check your internet connection and try again.',
+              [{ text: 'OK' }]
+            );
+            throw error;
+          }
+          
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          // Increase the delay for next attempt (exponential backoff)
+          retryDelay *= 1.5;
+          // Continue to next retry attempt
+          continue;
+        }
+        
+        // For other errors, throw immediately
+        if (error.code === 'auth/invalid-login-credentials' || 
+            error.code === 'auth/invalid-email' || 
+            error.code === 'auth/wrong-password') {
+          Alert.alert('Authentication Error', 'Invalid email or password. Please try again.');
+        } else if (error.code === 'auth/user-disabled') {
+          Alert.alert('Account Disabled', 'This account has been disabled. Please contact support.');
+        } else if (error.code === 'auth/too-many-requests') {
+          Alert.alert('Too Many Attempts', 'Access to this account has been temporarily disabled due to many failed login attempts. Try again later or reset your password.');
+        } else {
+          Alert.alert('Authentication Error', 'An error occurred during sign in. Please try again later.');
+        }
+        
+        throw error;
+      }
     }
   };
 

@@ -55,8 +55,9 @@ const ChatScreen: React.FC<Props> = ({ route, navigation }) => {
   useEffect(() => {
     const setupChat = async () => {
       if (!user) {
-        // User not logged in, redirect to home
-        navigation.navigate('Home');
+        // User not logged in, redirect to appropriate screen
+        // Navigate back to the employer home screen
+        navigation.navigate('EmployerHome');
         return;
       }
 
