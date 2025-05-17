@@ -5,8 +5,11 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
-  Alert
+  Alert,
+  Platform,
+  ScrollView
 } from 'react-native';
+import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../../context/AuthContext';
@@ -50,6 +53,7 @@ const JobTypeScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.contentContainer}>
         <View style={styles.headerContainer}>
           <Text style={[styles.title, { color: theme.text }]}>What type of job are you seeking?</Text>
@@ -63,28 +67,36 @@ const JobTypeScreen: React.FC<Props> = ({ navigation }) => {
             style={[
               styles.optionCard,
               {
-                backgroundColor: selectedType === 'formal' ? theme.primary : theme.secondary,
-                borderColor: selectedType === 'formal' ? theme.primary : theme.border
+                backgroundColor: theme.secondary,
+                borderColor: selectedType === 'formal' ? theme.primary : theme.border,
+                borderWidth: selectedType === 'formal' ? 3 : 1,
+                shadowColor: theme.text,
+                elevation: selectedType === 'formal' ? 8 : 2
               }
             ]}
             onPress={() => setSelectedType('formal')}
           >
             <View style={styles.optionIconContainer}>
-              {/* Replace with actual icon */}
               <View
                 style={[
                   styles.iconPlaceholder,
                   {
-                    backgroundColor: selectedType === 'formal' ? theme.secondary : theme.primary
+                    backgroundColor: theme.primary
                   }
                 ]}
-              />
+              >
+                <FontAwesome5 
+                  name="briefcase" 
+                  size={28} 
+                  color="#FFFFFF" 
+                />
+              </View>
             </View>
             <Text
               style={[
                 styles.optionTitle,
                 {
-                  color: selectedType === 'formal' ? theme.secondary : theme.text
+                  color: theme.text
                 }
               ]}
             >
@@ -94,7 +106,7 @@ const JobTypeScreen: React.FC<Props> = ({ navigation }) => {
               style={[
                 styles.optionDescription,
                 {
-                  color: selectedType === 'formal' ? theme.secondary : theme.text
+                  color: theme.text
                 }
               ]}
             >
@@ -106,28 +118,36 @@ const JobTypeScreen: React.FC<Props> = ({ navigation }) => {
             style={[
               styles.optionCard,
               {
-                backgroundColor: selectedType === 'informal' ? theme.primary : theme.secondary,
-                borderColor: selectedType === 'informal' ? theme.primary : theme.border
+                backgroundColor: theme.secondary,
+                borderColor: selectedType === 'informal' ? theme.primary : theme.border,
+                borderWidth: selectedType === 'informal' ? 3 : 1,
+                shadowColor: theme.text,
+                elevation: selectedType === 'informal' ? 8 : 2
               }
             ]}
             onPress={() => setSelectedType('informal')}
           >
             <View style={styles.optionIconContainer}>
-              {/* Replace with actual icon */}
               <View
                 style={[
                   styles.iconPlaceholder,
                   {
-                    backgroundColor: selectedType === 'informal' ? theme.secondary : theme.primary
+                    backgroundColor: theme.primary
                   }
                 ]}
-              />
+              >
+                <FontAwesome 
+                  name="coffee" 
+                  size={28} 
+                  color="#FFFFFF" 
+                />
+              </View>
             </View>
             <Text
               style={[
                 styles.optionTitle,
                 {
-                  color: selectedType === 'informal' ? theme.secondary : theme.text
+                  color: theme.text
                 }
               ]}
             >
@@ -137,7 +157,7 @@ const JobTypeScreen: React.FC<Props> = ({ navigation }) => {
               style={[
                 styles.optionDescription,
                 {
-                  color: selectedType === 'informal' ? theme.secondary : theme.text
+                  color: theme.text
                 }
               ]}
             >
@@ -166,6 +186,7 @@ const JobTypeScreen: React.FC<Props> = ({ navigation }) => {
           )}
         </TouchableOpacity>
       </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -173,6 +194,10 @@ const JobTypeScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    paddingBottom: 30,
   },
   contentContainer: {
     flex: 1,
@@ -194,15 +219,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   optionsContainer: {
-    flex: 1,
+    marginVertical: 20,
     justifyContent: 'center',
-    gap: 24,
   },
   optionCard: {
     borderRadius: 16,
     borderWidth: 1,
     padding: 24,
     marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   optionIconContainer: {
     marginBottom: 16,
@@ -226,10 +260,21 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     height: 56,
-    borderRadius: 8,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: 30,
+    marginBottom: 20,
+    ...Platform.select({
+      ios: {
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   continueButtonText: {
     fontSize: 16,
@@ -237,4 +282,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default JobTypeScreen; 
+export default JobTypeScreen;

@@ -1,7 +1,11 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { Platform, Text, View, StyleSheet, Dimensions } from 'react-native';
+
+// Get screen width for precise tab sizing
+const windowWidth = Dimensions.get('window').width;
 
 // Import screens
 import HomeScreen from '../screens/jobseeker/HomeScreen';
@@ -19,29 +23,61 @@ const JobSeekerTabNavigator = () => {
 
   return (
     <Tab.Navigator
+      // @ts-ignore - Workaround for 'Property id is missing' TypeScript error
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName: string;
-
-          if (route.name === 'Home') {
-            iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'Chat') {
-            iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
-          } else if (route.name === 'Profile') {
-            iconName = focused ? 'person' : 'person-outline';
-          } else if (route.name === 'Settings') {
-            iconName = focused ? 'settings' : 'settings-outline';
-          } else {
-            iconName = 'help-circle-outline';
-          }
-
-          return <Ionicons name={iconName as any} size={size} color={color} />;
+          // Use a consistent size for all icons
+          const iconSize = 24;
+          let iconName: any = "help-circle";
+          
+          if (route.name === 'Home') iconName = "home";
+          else if (route.name === 'Chat') iconName = "chat";
+          else if (route.name === 'Profile') iconName = "account";
+          else if (route.name === 'Settings') iconName = "cog";
+          
+          return (
+            <View style={styles.iconContainer}>
+              <MaterialCommunityIcons name={iconName} size={iconSize} color={color} />
+            </View>
+          );
+        },
+        tabBarLabel: ({ focused, color }) => {
+          let label = '';
+          if (route.name === 'Home') label = 'Home';
+          else if (route.name === 'Chat') label = 'Chat';
+          else if (route.name === 'Profile') label = 'Profile';
+          else if (route.name === 'Settings') label = 'Setting';
+          
+          return (
+            <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={[styles.tabBarLabel, { color }]}>{label}</Text>
+            </View>
+          );
         },
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: 'gray',
         tabBarStyle: {
           backgroundColor: theme.background,
           borderTopColor: theme.border,
+          height: 60,
+          paddingTop: 0,
+          paddingBottom: 0,
+          borderTopWidth: 1,
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-around',
+        },
+        tabBarItemStyle: {
+          width: windowWidth / 5, // Divide screen width by number of tabs
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: 60,
+          paddingVertical: 0,
+        },
+        tabBarShowLabel: true,
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
         },
         headerStyle: {
           backgroundColor: theme.primary,
@@ -83,12 +119,33 @@ const JobSeekerTabNavigator = () => {
         name="Settings" 
         component={SettingsScreen} 
         options={{ 
-          title: 'Settings',
+          title: 'Setting',
           headerTitle: 'Settings'
         }} 
       />
     </Tab.Navigator>
   );
 };
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    height: 28,
+    width: windowWidth / 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  labelContainer: {
+    height: 20,
+    width: windowWidth / 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tabBarLabel: {
+    fontSize: 12,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+});
 
 export default JobSeekerTabNavigator;

@@ -1,8 +1,13 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
-import { Text, StyleSheet, Platform } from 'react-native';
+import { Text, StyleSheet, Platform, View, Dimensions } from 'react-native';
+
+// Get screen width for precise tab sizing
+// Calculate window width for tab sizing
+// Dividing by 4 instead of 5 since we're hiding the Profile tab
+const windowWidth = Dimensions.get('window').width;
 
 // Import screens
 import EmployerHomeScreen from '../screens/employer/HomeScreen';
@@ -28,18 +33,21 @@ const EmployerTabNavigator: React.FC = () => {
       // @ts-ignore - Workaround for 'Property id is missing' TypeScript error
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          if (route.name === 'Home') {
-            return <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />;
-          } else if (route.name === 'ManageApplications') {
-            return <FontAwesome5 name="briefcase" size={size} color={color} />;
-          } else if (route.name === 'Chat') {
-            return <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={size} color={color} />;
-          } else if (route.name === 'Profile') {
-            return <Ionicons name={focused ? 'person' : 'person-outline'} size={size} color={color} />;
-          } else if (route.name === 'Settings') {
-            return <Ionicons name={focused ? 'settings' : 'settings-outline'} size={size} color={color} />;
-          }
-          return <Ionicons name="help-circle-outline" size={size} color={color} />;
+          // Use a consistent size for all icons
+          const iconSize = 24;
+          let iconName: any = "help-circle";
+          
+          if (route.name === 'Home') iconName = "home";
+          else if (route.name === 'ManageApplications') iconName = "briefcase";
+          else if (route.name === 'Chat') iconName = "chat";
+          else if (route.name === 'Profile') iconName = "account";
+          else if (route.name === 'Settings') iconName = "cog";
+          
+          return (
+            <View style={styles.iconContainer}>
+              <MaterialCommunityIcons name={iconName} size={iconSize} color={color} />
+            </View>
+          );
         },
         tabBarLabel: ({ focused, color }) => {
           let label = '';
@@ -47,19 +55,39 @@ const EmployerTabNavigator: React.FC = () => {
           else if (route.name === 'ManageApplications') label = 'Applications';
           else if (route.name === 'Chat') label = 'Chat';
           else if (route.name === 'Profile') label = 'Profile';
-          else if (route.name === 'Settings') label = 'Settings';
+          else if (route.name === 'Settings') label = 'Setting';
           
-          return <Text style={[styles.tabBarLabel, { color }]}>{label}</Text>;
+          return (
+            <View style={styles.labelContainer}>
+              <Text style={[styles.tabBarLabel, { color }]}>{label}</Text>
+            </View>
+          );
         },
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: 'gray',
+
+        tabBarItemStyle: {
+          width: windowWidth / 4, // Divide screen width by number of visible tabs (4)
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: 60,
+          paddingVertical: 0,
+        },
         tabBarStyle: {
           backgroundColor: theme.background,
           borderTopColor: theme.border,
-          height: Platform.OS === 'ios' ? 80 : 60,
-          paddingBottom: Platform.OS === 'ios' ? 15 : 5,
-          paddingHorizontal: 10,
+          height: 60,
+          paddingTop: 0,
+          paddingBottom: 0,
           borderTopWidth: 1,
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-around',
+        },
+        tabBarShowLabel: true,
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
         },
         headerStyle: {
           backgroundColor: theme.primary,
@@ -75,7 +103,7 @@ const EmployerTabNavigator: React.FC = () => {
         component={EmployerHomeScreen} 
         options={{ 
           title: 'Home',
-          headerTitle: 'Dashboard'
+          headerShown: false
         }} 
       />
       <Tab.Screen 
@@ -83,7 +111,7 @@ const EmployerTabNavigator: React.FC = () => {
         component={ManageApplicationsScreen} 
         options={{ 
           title: 'Applications',
-          headerTitle: 'Manage Applications'
+          headerShown: false
         }} 
       />
       <Tab.Screen 
@@ -100,14 +128,15 @@ const EmployerTabNavigator: React.FC = () => {
         component={ProfileScreen} 
         options={{ 
           title: 'Profile',
-          headerTitle: 'My Profile'
+          headerTitle: 'My Profile',
+          tabBarButton: () => null, // Hide this tab from the tab bar
         }}
       />
       <Tab.Screen 
         name="Settings" 
         component={SettingsScreen} 
         options={{ 
-          title: 'Settings',
+          title: 'Setting',
           headerTitle: 'Settings'
         }}
       />
@@ -135,10 +164,23 @@ const EmployerTabNavigator: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  iconContainer: {
+    height: 28,
+    width: windowWidth / 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  labelContainer: {
+    height: 20,
+    width: windowWidth / 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   tabBarLabel: {
     fontSize: 12,
     textAlign: 'center',
-    marginBottom: 3,
+    fontWeight: '500',
   },
 });
 

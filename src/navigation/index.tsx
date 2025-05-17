@@ -135,9 +135,8 @@ const Navigation = () => {
                 name="JobType" 
                 component={JobTypeScreen} 
                 options={{ 
-                  headerShown: true,
-                  title: 'Select Job Type',
-                  headerTintColor: theme.secondary
+                  headerShown: false,
+                  gestureEnabled: false // Prevent going back
                 }}
               />
               <Stack.Screen 

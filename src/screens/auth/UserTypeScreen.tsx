@@ -10,7 +10,8 @@ import {
   Alert,
   Dimensions,
   StatusBar,
-  Platform
+  Platform,
+  ScrollView
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -72,6 +73,7 @@ const UserTypeScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
       <StatusBar
         backgroundColor={theme.background}
         barStyle={theme.text === '#000000' ? 'dark-content' : 'light-content'}
@@ -213,6 +215,7 @@ const UserTypeScreen: React.FC<Props> = ({ navigation }) => {
         
 
       </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -221,12 +224,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContainer: {
+    flexGrow: 1,
+    paddingBottom: 30,
+  },
 
   contentContainer: {
-    flex: 1,
     paddingHorizontal: 24,
     paddingVertical: 20,
-    justifyContent: 'space-between',
   },
   headerContainer: {
     marginBottom: 30,
@@ -243,15 +248,14 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   optionsContainer: {
-    flex: 1,
+    marginVertical: 20,
     justifyContent: 'center',
-    gap: 24,
   },
   optionCard: {
     borderRadius: 20,
     borderWidth: 1,
-    padding: 24,
-    marginBottom: 16,
+    padding: 20,
+    marginBottom: 24,
     ...Platform.select({
       ios: {
         shadowOffset: { width: 0, height: 4 },
@@ -305,8 +309,8 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 24,
-    marginBottom: 20,
+    marginTop: 30,
+    marginBottom: 30,
     ...Platform.select({
       ios: {
         shadowOffset: { width: 0, height: 3 },
