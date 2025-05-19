@@ -11,6 +11,7 @@ const windowWidth = Dimensions.get('window').width;
 import HomeScreen from '../screens/jobseeker/HomeScreen';
 import ChatScreen from '../screens/jobseeker/ChatScreen';
 import SettingsScreen from '../screens/jobseeker/SettingsScreen';
+import JobDetailsScreen from '../screens/jobseeker/JobDetailsScreen';
 import JobSeekerProfileStack from './JobSeekerProfileStack';
 
 // Import types
@@ -121,6 +122,14 @@ const JobSeekerTabNavigator = () => {
         options={{ 
           title: 'Setting',
           headerTitle: 'Settings'
+        }}
+      />
+      <Tab.Screen 
+        name="JobDetails" 
+        component={JobDetailsScreen}
+        options={{
+          tabBarButton: () => null,
+          headerTitle: 'Job Details',
         }} 
       />
     </Tab.Navigator>

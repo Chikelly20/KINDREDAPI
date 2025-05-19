@@ -8,6 +8,7 @@ import Navigation from './src/navigation';
 import { ThemeProvider } from './src/context/ThemeContext';
 import { AuthProvider } from './src/context/AuthContext';
 import { JobSeekerProfilesProvider } from './src/context/JobSeekerProfilesContext';
+import { NotificationsProvider } from './src/context/NotificationsContext';
 import firebase from './src/services/firebase';
 
 // Enable screens for better navigation performance
@@ -70,8 +71,10 @@ export default function App() {
       <ThemeProvider>
         <AuthProvider>
           <JobSeekerProfilesProvider>
-            <Navigation />
-            <StatusBar style="light" />
+            <NotificationsProvider>
+              <Navigation />
+              <StatusBar style="light" />
+            </NotificationsProvider>
           </JobSeekerProfilesProvider>
         </AuthProvider>
       </ThemeProvider>

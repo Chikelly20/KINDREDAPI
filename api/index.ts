@@ -5,16 +5,53 @@
 
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import { matchCandidatesForJob, matchJobsForJobSeeker, calculateMatchScore } from './routes/jobMatching';
+import { matchCandidatesForJob } from './routes/matchCandidatesForJob';
+import { matchJobsForJobSeeker } from './routes/matchJobsForJobSeeker';
+import { calculateMatchScore } from './routes/calculateMatchScore';
 
 // Initialize Express app
 const app = express();
+const port = process.env.PORT || 3000;
+
+// API handler functions
+async function handleApplyToJob(req: Request, res: Response) {
+  try {
+    const { jobId, userId } = req.body;
+    // TODO: Implement job application logic
+    res.status(200).json({ message: 'Application submitted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to submit application' });
+  }
+}
+
+async function handleStartChat(req: Request, res: Response) {
+  try {
+    const { jobId, employerId, jobseekerId } = req.body;
+    // TODO: Implement chat initiation logic
+    res.status(200).json({ message: 'Chat started successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to start chat' });
+  }
+}
+
+async function handleGetJobs(req: Request, res: Response) {
+  try {
+    // TODO: Implement job fetching logic
+    const jobs = [];
+    res.status(200).json(jobs);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch jobs' });
+  }
+}
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
 // API routes
+app.post('/api/apply', (req, res) => handleApplyToJob(req, res));
+app.post('/api/chat', (req, res) => handleStartChat(req, res));
+app.get('/api/jobs', (req, res) => handleGetJobs(req, res));
 app.post('/jobs/match-candidates', matchCandidatesForJob);
 app.post('/jobseekers/match-jobs', matchJobsForJobSeeker);
 app.post('/match', calculateMatchScore);

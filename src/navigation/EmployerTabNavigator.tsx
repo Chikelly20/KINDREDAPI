@@ -2,11 +2,10 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
-import { Text, StyleSheet, Platform, View, Dimensions } from 'react-native';
+import { Text, StyleSheet, Platform, View, Dimensions, SafeAreaView } from 'react-native';
 
 // Get screen width for precise tab sizing
-// Calculate window width for tab sizing
-// Dividing by 4 instead of 5 since we're hiding the Profile tab
+// We have 4 visible tabs: Home, Applications, Chat, and Setting
 const windowWidth = Dimensions.get('window').width;
 
 // Import screens
@@ -26,26 +25,44 @@ const Tab = createBottomTabNavigator<EmployerStackParamList>();
 const EmployerTabNavigator: React.FC = () => {
   const { theme } = useTheme();
   
-  // Using 'as any' to bypass the TypeScript error with the 'id' property
-  // This is a known issue with React Navigation's TypeScript definitions
   return (
+    // @ts-ignore - Workaround for TypeScript error with 'id' property
+    // This is a known issue with React Navigation's type definitions
     <Tab.Navigator
-      // @ts-ignore - Workaround for 'Property id is missing' TypeScript error
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           // Use a consistent size for all icons
           const iconSize = 24;
-          let iconName: any = "help-circle";
           
-          if (route.name === 'Home') iconName = "home";
-          else if (route.name === 'ManageApplications') iconName = "briefcase";
-          else if (route.name === 'Chat') iconName = "chat";
-          else if (route.name === 'Profile') iconName = "account";
-          else if (route.name === 'Settings') iconName = "cog";
+          if (route.name === 'Home') {
+            return (
+              <View style={styles.iconContainer}>
+                <MaterialCommunityIcons name="home" size={iconSize} color={color} />
+              </View>
+            );
+          } else if (route.name === 'ManageApplications') {
+            return (
+              <View style={styles.iconContainer}>
+                <MaterialCommunityIcons name="briefcase" size={iconSize} color={color} />
+              </View>
+            );
+          } else if (route.name === 'Chat') {
+            return (
+              <View style={styles.iconContainer}>
+                <MaterialCommunityIcons name="chat" size={iconSize} color={color} />
+              </View>
+            );
+          } else if (route.name === 'Settings') {
+            return (
+              <View style={styles.iconContainer}>
+                <MaterialCommunityIcons name="cog" size={iconSize} color={color} />
+              </View>
+            );
+          }
           
           return (
             <View style={styles.iconContainer}>
-              <MaterialCommunityIcons name={iconName} size={iconSize} color={color} />
+              <MaterialCommunityIcons name="help-circle" size={iconSize} color={color} />
             </View>
           );
         },
@@ -67,11 +84,14 @@ const EmployerTabNavigator: React.FC = () => {
         tabBarInactiveTintColor: 'gray',
 
         tabBarItemStyle: {
-          width: windowWidth / 4, // Divide screen width by number of visible tabs (4)
+          flex: 1,
           justifyContent: 'center',
           alignItems: 'center',
           height: 60,
-          paddingVertical: 0,
+          paddingVertical: 8,
+          paddingHorizontal: 16,
+          minWidth: 80,
+          maxWidth: 120,
         },
         tabBarStyle: {
           backgroundColor: theme.background,
@@ -80,14 +100,33 @@ const EmployerTabNavigator: React.FC = () => {
           paddingTop: 0,
           paddingBottom: 0,
           borderTopWidth: 1,
-          display: 'flex',
           flexDirection: 'row',
           justifyContent: 'space-around',
+          paddingHorizontal: 16,
+          width: '100%',
         },
+        tabBarIconStyle: {
+          width: 24,
+          height: 24,
+          margin: 4,
+        },
+        tabBarBackground: () => (
+          <SafeAreaView style={{ backgroundColor: theme.background, flex: 1 }} />
+        ),
         tabBarShowLabel: true,
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '500',
+          textAlign: 'center',
+          lineHeight: 16,
+          marginBottom: 2,
+        },
+        tabBarIconContainerStyle: {
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: 32,
+          width: 32,
+          margin: 4,
         },
         headerStyle: {
           backgroundColor: theme.primary,
@@ -120,24 +159,15 @@ const EmployerTabNavigator: React.FC = () => {
         initialParams={{ applicantId: '', jobId: '' }}
         options={{ 
           title: 'Chat',
-          headerTitle: 'Messages'
-        }}
-      />
-      <Tab.Screen 
-        name="Profile" 
-        component={ProfileScreen} 
-        options={{ 
-          title: 'Profile',
-          headerTitle: 'My Profile',
-          tabBarButton: () => null, // Hide this tab from the tab bar
+          headerShown: false
         }}
       />
       <Tab.Screen 
         name="Settings" 
         component={SettingsScreen} 
         options={{ 
-          title: 'Setting',
-          headerTitle: 'Settings'
+          title: 'Settings',
+          headerShown: false
         }}
       />
       <Tab.Screen 
@@ -165,15 +195,15 @@ const EmployerTabNavigator: React.FC = () => {
 
 const styles = StyleSheet.create({
   iconContainer: {
-    height: 28,
-    width: windowWidth / 4,
+    height: 32,
+    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   labelContainer: {
-    height: 20,
-    width: windowWidth / 4,
+    height: 24,
+    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -181,6 +211,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     fontWeight: '500',
+    lineHeight: 16,
   },
 });
 

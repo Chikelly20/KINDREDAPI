@@ -15,6 +15,7 @@ import HomeScreen from '../screens/HomeScreen'; // Re-add HomeScreen import
 import JobTypeScreen from '../screens/jobseeker/JobTypeScreen';
 import FormalQuestionnaireScreen from '../screens/jobseeker/FormalQuestionnaireScreen';
 import InformalQuestionnaireScreen from '../screens/jobseeker/InformalQuestionnaireScreen';
+import NotificationsScreen from '../screens/common/NotificationsScreen';
 
 // Import tab navigator
 import JobSeekerTabNavigator from './JobSeekerTabNavigator';
@@ -29,10 +30,13 @@ export type RootStackParamList = {
   UserType: undefined;
   Home: undefined; // Add Home screen back to the navigation stack
   JobType: undefined;
+  JobDetails: { jobId: string };
+  JobApplication: { jobId: string };
   FormalQuestionnaire: undefined;
   InformalQuestionnaire: undefined;
   JobSeekerHome: undefined;
   EmployerHome: undefined;
+  Notifications: undefined;
 };
 
 // Job Seeker specific navigation
@@ -45,6 +49,7 @@ export type JobSeekerStackParamList = {
   Chat: { jobId: string; employerId: string } | undefined;
   Profile: undefined;
   Settings: undefined;
+  Notifications: undefined;
 };
 
 // Employer specific navigation
@@ -106,11 +111,19 @@ const Navigation = () => {
   return (
     <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator
+        // @ts-ignore - Adding id to fix navigation type error
+        id="root"
         screenOptions={{
-          headerStyle: { backgroundColor: theme.primary },
+          headerStyle: {
+            backgroundColor: theme.primary,
+          },
           headerTintColor: theme.secondary,
-          headerTitleStyle: { fontWeight: 'bold' },
-          contentStyle: { backgroundColor: theme.background }
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+          contentStyle: {
+            backgroundColor: theme.background,
+          },
         }}
       >
         {user ? (
@@ -167,6 +180,10 @@ const Navigation = () => {
                 component={EmployerTabNavigator} 
                 options={{ headerShown: false }}
               />
+              <Stack.Screen 
+                name="Notifications" 
+                component={NotificationsScreen} 
+              />
             </>
           ) : user.userType === 'employer' ? (
             // Employer routes
@@ -194,6 +211,10 @@ const Navigation = () => {
                 component={JobSeekerTabNavigator} 
                 options={{ headerShown: false }}
               />
+              <Stack.Screen 
+                name="Notifications" 
+                component={NotificationsScreen} 
+              />
             </>
           ) : (
             // User hasn't set their type yet
@@ -215,6 +236,10 @@ const Navigation = () => {
                 name="EmployerHome" 
                 component={EmployerTabNavigator} 
                 options={{ headerShown: false }}
+              />
+              <Stack.Screen 
+                name="Notifications" 
+                component={NotificationsScreen} 
               />
             </>
           )

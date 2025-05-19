@@ -1,3 +1,5 @@
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+
 // Navigation type definitions
 
 // Root Stack Param List (main navigation)
@@ -19,6 +21,8 @@ export type RootStackParamList = {
 export type JobSeekerStackParamList = {
   Home: undefined;
   JobType: undefined;
+  JobDetails: { jobId: string };
+  JobApplication: { jobId: string };
   FormalQuestionnaire: undefined;
   InformalQuestionnaire: undefined;
   JobSeekerHome: undefined;
@@ -28,6 +32,8 @@ export type JobSeekerStackParamList = {
 };
 
 // Employer specific navigation
+export type JobSeekerStackNavigationProp<T extends keyof JobSeekerStackParamList> = NativeStackScreenProps<JobSeekerStackParamList, T>;
+
 export type EmployerStackParamList = {
   Home: undefined;
   PostJob: { jobId?: string };

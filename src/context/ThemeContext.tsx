@@ -11,6 +11,9 @@ const lightTheme = {
   card: '#F5F5F5',
   border: '#E0E0E0',
   error: '#E53935', // Red for errors
+  placeholder: '#666666', // Dark gray for placeholder text
+  cardBackground: '#F5F5F5', // Light gray for card background
+  textSecondary: '#757575', // Light gray for secondary text
 };
 
 const darkTheme = {
@@ -22,14 +25,28 @@ const darkTheme = {
   card: '#1E1E1E',
   border: '#333333',
   error: '#FF5252', // Red for errors
+  placeholder: '#666666', // Dark gray for placeholder text
+  cardBackground: '#1A1A1A', // Dark gray for card background
+  textSecondary: '#AAAAAA', // Light gray for secondary text
 };
 
 // Theme context type
-type Theme = typeof lightTheme;
 type ThemeType = 'light' | 'dark';
 
-interface ThemeContextType {
-  theme: Theme;
+export interface ThemeContextType {
+  theme: {
+    primary: string;
+    secondary: string;
+    text: string;
+    textLight: string;
+    background: string;
+    card: string;
+    border: string;
+    error: string;
+    placeholder: string;
+    cardBackground: string;
+    textSecondary: string;
+  };
   themeType: ThemeType;
   toggleTheme: () => void;
 }

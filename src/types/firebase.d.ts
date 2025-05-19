@@ -23,6 +23,17 @@ declare module 'firebase/compat/firestore' {
 
 // Fix for Firebase firestore imports
 declare module 'firebase/firestore' {
+  export interface Firestore {}
+  export function getFirestore(app?: any): Firestore;
+  export class Timestamp {
+    seconds: number;
+    nanoseconds: number;
+    toDate(): Date;
+    toMillis(): number;
+    static now(): Timestamp;
+    static fromDate(date: Date): Timestamp;
+    static fromMillis(milliseconds: number): Timestamp;
+  }
   export interface DocumentData {
     [key: string]: any;
   }

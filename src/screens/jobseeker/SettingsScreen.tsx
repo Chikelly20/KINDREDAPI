@@ -102,6 +102,37 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
         </View>
 
         <View style={[styles.sectionContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Profile Options</Text>
+          
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('JobType')}
+          >
+            <Ionicons name="briefcase-outline" size={24} color={theme.primary} />
+            <Text style={[styles.menuItemText, { color: theme.text }]}>Change Job Type</Text>
+            <Ionicons name="chevron-forward" size={20} color={theme.text} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('FormalQuestionnaire')}
+          >
+            <Ionicons name="document-outline" size={24} color={theme.primary} />
+            <Text style={[styles.menuItemText, { color: theme.text }]}>Formal Profile</Text>
+            <Ionicons name="chevron-forward" size={20} color={theme.text} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('InformalQuestionnaire')}
+          >
+            <Ionicons name="clipboard-outline" size={24} color={theme.primary} />
+            <Text style={[styles.menuItemText, { color: theme.text }]}>Informal Profile</Text>
+            <Ionicons name="chevron-forward" size={20} color={theme.text} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={[styles.sectionContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Privacy</Text>
           
           <View style={styles.settingItem}>
