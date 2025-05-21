@@ -387,7 +387,11 @@ const JobSeekerHomeScreen: React.FC = () => {
               <View style={styles.sectionContainer}>
                 <Text style={styles.sectionTitle}>Search Results</Text>
                 {filteredJobs.length > 0 ? (
-                  filteredJobs.map(job => renderJobItem({ item: job }))
+                  filteredJobs.map(job => (
+                    <View key={job.id}>
+                      {renderJobItem({ item: job })}
+                    </View>
+                  ))
                 ) : (
                   <View style={styles.emptyContainer}>
                     <Text style={styles.emptyText}>No jobs found matching "{searchQuery}"</Text>
@@ -510,7 +514,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 50,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -619,14 +623,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4
   },
   forYouCardHorizontal: {
-    width: 250,
-    padding: 12,
+    width: 280,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
-    marginBottom: 4
+    marginBottom: 12,
+    minHeight: 180
   },
   forYouJobHeader: {
-    marginBottom: 8
+    marginBottom: 12
   },
   forYouJobTitle: {
     fontSize: 16,
