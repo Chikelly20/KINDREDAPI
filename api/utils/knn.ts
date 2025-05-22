@@ -5,6 +5,7 @@
  */
 
 import { Job, JobSeeker, MatchingResult, JobMatch, CandidateMatch } from '../models/types';
+import { calculateDistance, calculateLocationMatchScore, geocodeAddress, Coordinates } from './geocoding';
 
 /**
  * Calculate detailed similarity score between a job and a job seeker
@@ -12,7 +13,7 @@ import { Job, JobSeeker, MatchingResult, JobMatch, CandidateMatch } from '../mod
  * @param jobSeeker The job seeker profile
  * @returns Detailed matching result with scores for different criteria
  */
-export const calculateDetailedSimilarity = (job: Job, jobSeeker: JobSeeker): MatchingResult => {
+export const calculateDetailedSimilarity = async (job: Job, jobSeeker: JobSeeker): Promise<MatchingResult> => {
   // Initialize match details
   const matchDetails = {
     skillsMatch: 0,
@@ -23,6 +24,7 @@ export const calculateDetailedSimilarity = (job: Job, jobSeeker: JobSeeker): Mat
   
   let totalScore = 0;
   let maxPossibleScore = 0;
+  let distance: number | undefined = undefined;
   
   // Calculate skill match (most important factor)
   const jobSkills = job.requirements || [];
@@ -41,14 +43,38 @@ export const calculateDetailedSimilarity = (job: Job, jobSeeker: JobSeeker): Mat
     maxPossibleScore += 0.5;
   }
   
-  // Location match
+  // Location match using precise proximity
   if (job.location && jobSeeker.location) {
-    // Simple string match for now, could be enhanced with geocoding
-    if (job.location.toLowerCase().includes(jobSeeker.location.toLowerCase()) ||
-        jobSeeker.location.toLowerCase().includes(job.location.toLowerCase())) {
-      matchDetails.locationMatch = 1;
-      totalScore += 0.2; // 20% weight for location
+    // Get coordinates for job and job seeker if not already available
+    let jobCoords = job.coordinates;
+    let seekerCoords = jobSeeker.coordinates;
+    
+    if (!jobCoords) {
+      jobCoords = await geocodeAddress(job.location);
     }
+    
+    if (!seekerCoords) {
+      seekerCoords = await geocodeAddress(jobSeeker.location);
+    }
+    
+    // Calculate distance and match score if coordinates are available
+    if (jobCoords && seekerCoords) {
+      distance = calculateDistance(jobCoords, seekerCoords);
+      
+      // Use job seeker's max distance preference or default to 50km
+      const maxDistance = jobSeeker.maxDistance || 50;
+      
+      matchDetails.locationMatch = calculateLocationMatchScore(distance, maxDistance);
+      totalScore += matchDetails.locationMatch * 0.2; // 20% weight for location
+    } else {
+      // Fall back to string matching if geocoding fails
+      if (job.location.toLowerCase().includes(jobSeeker.location.toLowerCase()) ||
+          jobSeeker.location.toLowerCase().includes(job.location.toLowerCase())) {
+        matchDetails.locationMatch = 0.7; // Not as good as precise matching
+        totalScore += matchDetails.locationMatch * 0.2;
+      }
+    }
+    
     maxPossibleScore += 0.2;
   }
   
@@ -90,7 +116,8 @@ export const calculateDetailedSimilarity = (job: Job, jobSeeker: JobSeeker): Mat
   return {
     score: normalizedScore,
     matchPercentage: Math.round(normalizedScore * 100),
-    matchDetails
+    matchDetails,
+    distance
   };
 };
 
@@ -131,21 +158,31 @@ const extractKeywords = (text: string): string[] => {
  * @param jobSeeker The job seeker to find matches for
  * @param jobs List of all available jobs
  * @param k Number of nearest neighbors to return
+ * @param maxDistance Optional maximum distance in kilometers
  * @returns Array of jobs sorted by similarity (highest first)
  */
-export const findMatchingJobsForJobSeeker = (
+export const findMatchingJobsForJobSeeker = async (
   jobSeeker: JobSeeker,
   jobs: Job[],
-  k: number = 5
-): JobMatch[] => {
+  k: number = 5,
+  maxDistance?: number
+): Promise<JobMatch[]> => {
   // Calculate similarity scores for all jobs
-  const scoredJobs = jobs.map(job => ({
+  const scoredJobsPromises = jobs.map(async job => ({
     job,
-    ...calculateDetailedSimilarity(job, jobSeeker)
+    ...(await calculateDetailedSimilarity(job, jobSeeker))
   }));
   
+  // Wait for all similarity calculations to complete
+  const scoredJobs = await Promise.all(scoredJobsPromises);
+  
+  // Filter by maximum distance if specified
+  const filteredJobs = maxDistance
+    ? scoredJobs.filter(job => job.distance === undefined || job.distance <= maxDistance)
+    : scoredJobs;
+  
   // Sort by score (descending) and take top k
-  return scoredJobs
+  return filteredJobs
     .sort((a, b) => b.score - a.score)
     .slice(0, k);
 };
@@ -155,21 +192,66 @@ export const findMatchingJobsForJobSeeker = (
  * @param job The job to find candidates for
  * @param jobSeekers List of all available job seekers
  * @param k Number of nearest neighbors to return
+ * @param maxDistance Optional maximum distance in kilometers
  * @returns Array of job seekers sorted by similarity (highest first)
  */
-export const findMatchingCandidatesForJob = (
+export const findMatchingCandidatesForJob = async (
   job: Job,
   jobSeekers: JobSeeker[],
-  k: number = 5
-): CandidateMatch[] => {
+  k: number = 5,
+  maxDistance?: number
+): Promise<CandidateMatch[]> => {
   // Calculate similarity scores for all job seekers
-  const scoredCandidates = jobSeekers.map(jobSeeker => ({
+  const scoredCandidatesPromises = jobSeekers.map(async jobSeeker => ({
     jobSeeker,
-    ...calculateDetailedSimilarity(job, jobSeeker)
+    ...(await calculateDetailedSimilarity(job, jobSeeker))
   }));
   
+  // Wait for all similarity calculations to complete
+  const scoredCandidates = await Promise.all(scoredCandidatesPromises);
+  
+  // Filter by maximum distance if specified
+  const filteredCandidates = maxDistance
+    ? scoredCandidates.filter(candidate => candidate.distance === undefined || candidate.distance <= maxDistance)
+    : scoredCandidates;
+  
   // Sort by score (descending) and take top k
-  return scoredCandidates
+  return filteredCandidates
     .sort((a, b) => b.score - a.score)
     .slice(0, k);
+};
+
+/**
+ * Filter jobs by precise proximity to a location
+ * @param jobs List of jobs to filter
+ * @param coordinates Reference coordinates (usually job seeker's location)
+ * @param maxDistance Maximum distance in kilometers
+ * @returns Promise resolving to filtered jobs with calculated distances
+ */
+export const filterJobsByProximity = async (
+  jobs: Job[],
+  coordinates: Coordinates,
+  maxDistance: number
+): Promise<Array<Job & { distance: number }>> => {
+  // Process jobs in parallel
+  const jobsWithDistancePromises = jobs.map(async job => {
+    // Get job coordinates if not already available
+    const jobCoords = job.coordinates || await geocodeAddress(job.location);
+    
+    // Skip jobs that couldn't be geocoded
+    if (!jobCoords) return null;
+    
+    // Calculate distance
+    const distance = calculateDistance(coordinates, jobCoords);
+    
+    // Include job with its distance
+    return { ...job, distance };
+  });
+  
+  // Wait for all distance calculations to complete
+  const jobsWithDistance = (await Promise.all(jobsWithDistancePromises))
+    .filter((job): job is (Job & { distance: number }) => job !== null);
+  
+  // Filter by maximum distance
+  return jobsWithDistance.filter(job => job.distance <= maxDistance);
 };

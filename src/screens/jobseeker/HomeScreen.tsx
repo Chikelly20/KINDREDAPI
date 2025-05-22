@@ -27,11 +27,17 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 
 type JobSeekerHomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'JobSeekerHome'>;
 
+interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
+
 interface Job {
   id: string;
   title: string;
   employerName: string;
   location: string;
+  coordinates?: Coordinates;
   salary: string;
   jobType: string;
   workingHours: string;
@@ -40,6 +46,7 @@ interface Job {
   status: 'open' | 'closed';
   createdAt: Date;
   type: string;
+  distance?: number; // Distance in kilometers from user's location
 }
 
 interface UserProfile {
@@ -69,6 +76,9 @@ const JobSeekerHomeScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
+  const [proximityFilter, setProximityFilter] = useState<number | null>(null);
+  const [showProximityFilter, setShowProximityFilter] = useState(false);
+  const [userCoordinates, setUserCoordinates] = useState<Coordinates | null>(null);
 
   const fetchUserProfile = useCallback(async () => {
     if (!user?.uid) return;
@@ -83,6 +93,21 @@ const JobSeekerHomeScreen: React.FC = () => {
           id: userDocSnap.id,
           ...userData
         });
+        
+        // If user has location, try to geocode it to get coordinates
+        if (userData.location) {
+          try {
+            // This would be replaced with a real geocoding API call in production
+            // For now, we'll use a mock implementation with some predefined locations
+            const coordinates = await geocodeLocation(userData.location);
+            if (coordinates) {
+              setUserCoordinates(coordinates);
+              console.log('User coordinates set:', coordinates);
+            }
+          } catch (geocodeError) {
+            console.error('Error geocoding user location:', geocodeError);
+          }
+        }
       } else {
         console.error('User profile not found in Firestore');
         Alert.alert('Error', 'Could not find your profile. Please contact support.');
@@ -92,6 +117,45 @@ const JobSeekerHomeScreen: React.FC = () => {
       Alert.alert('Error', 'Failed to load your profile. Please check your connection and try again.');
     }
   }, [user]);
+  
+  // Mock geocoding function - in production, use a real geocoding API
+  const geocodeLocation = async (location: string): Promise<Coordinates | null> => {
+    // This is a mock implementation with some common locations
+    const geocodingMock: Record<string, Coordinates> = {
+      'london': { latitude: 51.5074, longitude: -0.1278 },
+      'manchester': { latitude: 53.4808, longitude: -2.2426 },
+      'birmingham': { latitude: 52.4862, longitude: -1.8904 },
+      'leeds': { latitude: 53.8008, longitude: -1.5491 },
+      'liverpool': { latitude: 53.4084, longitude: -2.9916 },
+      'newcastle': { latitude: 54.9783, longitude: -1.6178 },
+      'sheffield': { latitude: 53.3811, longitude: -1.4701 },
+      'bristol': { latitude: 51.4545, longitude: -2.5879 },
+      'cardiff': { latitude: 51.4816, longitude: -3.1791 },
+      'edinburgh': { latitude: 55.9533, longitude: -3.1883 },
+      'glasgow': { latitude: 55.8642, longitude: -4.2518 },
+      'belfast': { latitude: 54.5973, longitude: -5.9301 },
+      'dublin': { latitude: 53.3498, longitude: -6.2603 },
+    };
+    
+    // Normalize the location for lookup
+    const normalizedLocation = location.toLowerCase().trim();
+    
+    // Check for exact matches
+    if (geocodingMock[normalizedLocation]) {
+      return geocodingMock[normalizedLocation];
+    }
+    
+    // Check for partial matches
+    for (const [key, coords] of Object.entries(geocodingMock)) {
+      if (normalizedLocation.includes(key) || key.includes(normalizedLocation)) {
+        return coords;
+      }
+    }
+    
+    // No match found
+    console.log(`Could not geocode location: ${location}`);
+    return null;
+  };
 
   const fetchJobs = useCallback(async () => {
     setIsLoading(true);
@@ -121,6 +185,7 @@ const JobSeekerHomeScreen: React.FC = () => {
             title: data.title || 'Untitled Job',
             employerName: data.employerName || 'Unknown Employer',
             location: data.location || 'Remote',
+            coordinates: data.coordinates || null,
             salary: data.salary || 'Competitive',
             jobType: data.jobType || 'Full-time',
             workingHours: data.workingHours || 'Standard hours',
@@ -130,6 +195,25 @@ const JobSeekerHomeScreen: React.FC = () => {
             createdAt: data.createdAt instanceof Date ? data.createdAt : new Date((data.createdAt as any)?.seconds ? (data.createdAt as any).seconds * 1000 : Date.now()),
             type: data.type || data.jobType || 'Full-time'
           };
+          
+          // If job has location but no coordinates, try to geocode it
+          if (job.location && !job.coordinates) {
+            geocodeLocation(job.location).then(coords => {
+              if (coords) {
+                job.coordinates = coords;
+                
+                // Calculate distance if user coordinates are available
+                if (userCoordinates) {
+                  job.distance = calculateDistance(userCoordinates, coords);
+                }
+              }
+            }).catch(err => {
+              console.error(`Error geocoding job location for ${job.id}:`, err);
+            });
+          } else if (job.coordinates && userCoordinates) {
+            // Calculate distance if both coordinates are available
+            job.distance = calculateDistance(userCoordinates, job.coordinates);
+          }
           
           jobsData.push(job);
         } catch (docError) {
@@ -155,7 +239,30 @@ const JobSeekerHomeScreen: React.FC = () => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [userProfile]);
+  }, [userProfile, userCoordinates]);
+  
+  // Calculate distance between two coordinates using the Haversine formula
+  const calculateDistance = (point1: Coordinates, point2: Coordinates): number => {
+    const R = 6371; // Earth's radius in kilometers
+    
+    // Convert latitude and longitude from degrees to radians
+    const lat1Rad = (point1.latitude * Math.PI) / 180;
+    const lon1Rad = (point1.longitude * Math.PI) / 180;
+    const lat2Rad = (point2.latitude * Math.PI) / 180;
+    const lon2Rad = (point2.longitude * Math.PI) / 180;
+    
+    // Haversine formula
+    const dLat = lat2Rad - lat1Rad;
+    const dLon = lon2Rad - lon1Rad;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1Rad) * Math.cos(lat2Rad) * 
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    
+    return distance;
+  };
 
   const findMatchingJobs = (profile: UserProfile, jobs: Job[]): Job[] => {
     if (!profile) return jobs.slice(0, 5);
@@ -184,7 +291,7 @@ const JobSeekerHomeScreen: React.FC = () => {
 
     setIsSearching(true);
     const lowerCaseQuery = query.toLowerCase();
-    const filtered = recentJobs.filter(job => {
+    let filtered = recentJobs.filter(job => {
       return (
         job.title.toLowerCase().includes(lowerCaseQuery) ||
         job.employerName.toLowerCase().includes(lowerCaseQuery) ||
@@ -192,7 +299,39 @@ const JobSeekerHomeScreen: React.FC = () => {
         job.jobType.toLowerCase().includes(lowerCaseQuery)
       );
     });
+    
+    // Apply proximity filter if active
+    if (proximityFilter !== null && userCoordinates) {
+      filtered = filtered.filter(job => {
+        return job.distance !== undefined && job.distance <= proximityFilter;
+      });
+    }
+    
     setFilteredJobs(filtered);
+  };
+  
+  const toggleProximityFilter = () => {
+    setShowProximityFilter(!showProximityFilter);
+  };
+  
+  const applyProximityFilter = (distance: number | null) => {
+    setProximityFilter(distance);
+    
+    // If we're already searching, reapply the search with the new filter
+    if (isSearching && searchQuery.trim() !== '') {
+      handleSearch(searchQuery);
+    } else if (distance !== null && userCoordinates) {
+      // If we're not searching but have a proximity filter, show all jobs within that distance
+      setIsSearching(true);
+      const filtered = recentJobs.filter(job => {
+        return job.distance !== undefined && job.distance <= distance;
+      });
+      setFilteredJobs(filtered);
+    } else {
+      // If proximity filter is cleared and we're not searching, exit search mode
+      setIsSearching(false);
+      setFilteredJobs([]);
+    }
   };
 
   const handleRefresh = async () => {
@@ -368,7 +507,57 @@ const JobSeekerHomeScreen: React.FC = () => {
                 value={searchQuery}
                 onChangeText={handleSearch}
               />
+              <TouchableOpacity onPress={toggleProximityFilter} style={styles.filterButton}>
+                <MaterialIcons 
+                  name="filter-list" 
+                  size={24} 
+                  color={proximityFilter !== null ? theme.primary : theme.textSecondary} 
+                />
+              </TouchableOpacity>
             </View>
+            
+            {showProximityFilter && (
+              <View style={styles.proximityFilterContainer}>
+                <Text style={styles.proximityFilterTitle}>Filter by distance:</Text>
+                <View style={styles.proximityButtonsContainer}>
+                  <TouchableOpacity 
+                    style={[styles.proximityButton, proximityFilter === 5 ? { backgroundColor: theme.primary } : {}]}
+                    onPress={() => applyProximityFilter(5)}
+                  >
+                    <Text style={[styles.proximityButtonText, proximityFilter === 5 ? { color: 'white' } : {}]}>5 km</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.proximityButton, proximityFilter === 10 ? { backgroundColor: theme.primary } : {}]}
+                    onPress={() => applyProximityFilter(10)}
+                  >
+                    <Text style={[styles.proximityButtonText, proximityFilter === 10 ? { color: 'white' } : {}]}>10 km</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.proximityButton, proximityFilter === 25 ? { backgroundColor: theme.primary } : {}]}
+                    onPress={() => applyProximityFilter(25)}
+                  >
+                    <Text style={[styles.proximityButtonText, proximityFilter === 25 ? { color: 'white' } : {}]}>25 km</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.proximityButton, proximityFilter === 50 ? { backgroundColor: theme.primary } : {}]}
+                    onPress={() => applyProximityFilter(50)}
+                  >
+                    <Text style={[styles.proximityButtonText, proximityFilter === 50 ? { color: 'white' } : {}]}>50 km</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.proximityButton, { borderColor: theme.border }]}
+                    onPress={() => applyProximityFilter(null)}
+                  >
+                    <Text style={styles.proximityButtonText}>Clear</Text>
+                  </TouchableOpacity>
+                </View>
+                {!userCoordinates && (
+                  <Text style={styles.proximityWarning}>
+                    Unable to determine your location. Please update your profile with a valid location.
+                  </Text>
+                )}
+              </View>
+            )}
           </View>
         </View>
 
@@ -385,7 +574,12 @@ const JobSeekerHomeScreen: React.FC = () => {
           >
             {isSearching ? (
               <View style={styles.sectionContainer}>
-                <Text style={styles.sectionTitle}>Search Results</Text>
+                <Text style={styles.sectionTitle}>
+                  {proximityFilter !== null ? 
+                    `Jobs within ${proximityFilter} km${searchQuery ? ` matching "${searchQuery}"` : ''}` : 
+                    `Search Results for "${searchQuery}"`
+                  }
+                </Text>
                 {filteredJobs.length > 0 ? (
                   filteredJobs.map(job => (
                     <View key={job.id}>
@@ -394,7 +588,12 @@ const JobSeekerHomeScreen: React.FC = () => {
                   ))
                 ) : (
                   <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>No jobs found matching "{searchQuery}"</Text>
+                    <Text style={styles.emptyText}>
+                      {proximityFilter !== null ? 
+                        `No jobs found within ${proximityFilter} km${searchQuery ? ` matching "${searchQuery}"` : ''}` : 
+                        `No jobs found matching "${searchQuery}"`
+                      }
+                    </Text>
                   </View>
                 )}
               </View>
@@ -523,8 +722,50 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
+    height: 40,
     fontSize: 16,
-    color: '#000000'
+    color: '#333333',
+  },
+  filterButton: {
+    padding: 5,
+  },
+  proximityFilterContainer: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  proximityFilterTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#333333',
+  },
+  proximityButtonsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  proximityButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    marginRight: 8,
+    marginBottom: 8,
+    backgroundColor: 'white',
+  },
+  proximityButtonText: {
+    fontSize: 12,
+    color: '#333333',
+  },
+  proximityWarning: {
+    fontSize: 12,
+    color: 'red',
+    marginTop: 8,
   },
   contentContainer: {
     flex: 1,

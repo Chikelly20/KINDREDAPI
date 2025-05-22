@@ -5,9 +5,7 @@
 
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import { matchCandidatesForJob } from './routes/matchCandidatesForJob';
-import { matchJobsForJobSeeker } from './routes/matchJobsForJobSeeker';
-import { calculateMatchScore } from './routes/calculateMatchScore';
+import { matchCandidatesForJob, matchJobsForJobSeeker, calculateMatchScore, filterJobsByDistance } from './routes/jobMatching';
 
 // Initialize Express app
 const app = express();
@@ -49,12 +47,26 @@ app.use(cors());
 app.use(express.json());
 
 // API routes
-app.post('/api/apply', (req, res) => handleApplyToJob(req, res));
-app.post('/api/chat', (req, res) => handleStartChat(req, res));
-app.get('/api/jobs', (req, res) => handleGetJobs(req, res));
-app.post('/jobs/match-candidates', matchCandidatesForJob);
-app.post('/jobseekers/match-jobs', matchJobsForJobSeeker);
-app.post('/match', calculateMatchScore);
+app.post('/api/apply', handleApplyToJob);
+app.post('/api/chat', handleStartChat);
+app.get('/api/jobs', handleGetJobs);
+
+// Job matching routes
+app.post('/jobs/match-candidates', (req: Request, res: Response) => {
+  matchCandidatesForJob(req, res);
+});
+
+app.post('/jobseekers/match-jobs', (req: Request, res: Response) => {
+  matchJobsForJobSeeker(req, res);
+});
+
+app.post('/match', (req: Request, res: Response) => {
+  calculateMatchScore(req, res);
+});
+
+app.post('/jobs/nearby', (req: Request, res: Response) => {
+  filterJobsByDistance(req, res);
+});
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
@@ -74,7 +86,8 @@ app.get('/', (req: Request, res: Response) => {
         description: 'Find matching candidates for a job',
         body: {
           jobId: 'string (required)',
-          k: 'number (optional, default: 5)'
+          k: 'number (optional, default: 5)',
+          maxDistance: 'number (optional, in kilometers)'
         }
       },
       {
@@ -83,7 +96,8 @@ app.get('/', (req: Request, res: Response) => {
         description: 'Find matching jobs for a job seeker',
         body: {
           jobSeekerId: 'string (required)',
-          k: 'number (optional, default: 5)'
+          k: 'number (optional, default: 5)',
+          maxDistance: 'number (optional, in kilometers)'
         }
       },
       {
@@ -93,6 +107,16 @@ app.get('/', (req: Request, res: Response) => {
         body: {
           job: 'Job object (required)',
           jobSeeker: 'JobSeeker object (required)'
+        }
+      },
+      {
+        path: '/jobs/nearby',
+        method: 'POST',
+        description: 'Find jobs near a specific location using precise proximity',
+        body: {
+          latitude: 'number (required)',
+          longitude: 'number (required)',
+          maxDistance: 'number (optional, in kilometers, default: 50)'
         }
       }
     ]
