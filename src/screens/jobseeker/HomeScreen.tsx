@@ -21,6 +21,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { collection, query, where, orderBy, limit, doc, getDoc, getDocs } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useTheme } from '../../context/ThemeContext';
+import { findMatchingJobs } from '../../utils/jobMatching';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../context/NotificationsContext';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
@@ -51,16 +52,39 @@ interface Job {
 
 interface UserProfile {
   id: string;
-  displayName: string;
-  email: string;
-  photoURL?: string;
-  jobSeekerType: string;
-  skills: string[];
-  experience: string;
-  education: string;
-  preferredJobType?: string;
-  location: string;
-  bio: string;
+  displayName?: string; // From auth
+  email?: string; // From auth
+  photoURL?: string; // From auth
+  jobSeekerType?: 'formal' | 'informal'; // From root of user doc
+
+  // Fields from jobSeekerProfile (EditProfileScreen data)
+  fullName?: string;
+  location?: string;
+  phone?: string;
+  skills?: string[]; // Primary skills array
+  experience?: string; // Primary experience text
+  education?: string; // Primary education text
+  bio?: string;
+  resume?: string;
+  certifications?: string[]; // Certifications as an array
+  availability?: string;
+  preferredJobs?: string[]; // Preferred job titles/types as an array
+  interests?: string; // If collected in jobSeekerProfile
+  expectedSalary?: string; // If collected
+  preferredWorkingHours?: string; // If collected
+
+  // Fields from formalQuestionnaire
+  formal_jobSeeking?: string;
+  formal_previousRoles?: string;
+  formal_qualifications?: string;
+  formal_languages?: string;
+  formal_references?: string;
+
+  // Fields from informalQuestionnaire
+  informal_jobSeeking?: string;
+  informal_workExperience?: string;
+
+  profileCompleted?: boolean;
 }
 
 const JobSeekerHomeScreen: React.FC = () => {
@@ -88,21 +112,53 @@ const JobSeekerHomeScreen: React.FC = () => {
       const userDocSnap = await getDoc(userDocRef);
 
       if (userDocSnap.exists()) {
-        const userData = userDocSnap.data() as UserProfile;
-        setUserProfile({
+        const docData = userDocSnap.data(); // Raw data from Firestore
+
+        const mergedProfile: UserProfile = {
           id: userDocSnap.id,
-          ...userData
-        });
+          displayName: user?.displayName || docData.displayName,
+          email: user?.email || docData.email,
+          photoURL: user?.photoURL || docData.photoURL,
+          jobSeekerType: docData.jobSeekerType,
+          profileCompleted: docData.profileCompleted,
+
+          // From jobSeekerProfile, with fallbacks or defaults
+          fullName: docData.jobSeekerProfile?.fullName || user?.displayName || '',
+          location: docData.jobSeekerProfile?.location || '',
+          phone: docData.jobSeekerProfile?.phone || '',
+          skills: docData.jobSeekerProfile?.skills || [],
+          experience: docData.jobSeekerProfile?.experience || '',
+          education: docData.jobSeekerProfile?.education || '',
+          bio: docData.jobSeekerProfile?.bio || '',
+          resume: docData.jobSeekerProfile?.resume,
+          certifications: docData.jobSeekerProfile?.certifications || [],
+          availability: docData.jobSeekerProfile?.availability,
+          preferredJobs: docData.jobSeekerProfile?.preferredJobs || [],
+          interests: docData.jobSeekerProfile?.interests,
+          expectedSalary: docData.jobSeekerProfile?.expectedSalary,
+          preferredWorkingHours: docData.jobSeekerProfile?.preferredWorkingHours,
+
+          // From formalQuestionnaire
+          formal_jobSeeking: docData.formalQuestionnaire?.jobSeeking,
+          formal_previousRoles: docData.formalQuestionnaire?.previousRoles,
+          formal_qualifications: docData.formalQuestionnaire?.qualifications,
+          formal_languages: docData.formalQuestionnaire?.languages,
+          formal_references: docData.formalQuestionnaire?.references,
+
+          // From informalQuestionnaire
+          informal_jobSeeking: docData.informalQuestionnaire?.jobSeeking,
+          informal_workExperience: docData.informalQuestionnaire?.workExperience,
+        };
         
-        // If user has location, try to geocode it to get coordinates
-        if (userData.location) {
+        setUserProfile(mergedProfile);
+        
+        // Geocoding logic (uses mergedProfile.location)
+        if (mergedProfile.location) {
           try {
-            // This would be replaced with a real geocoding API call in production
-            // For now, we'll use a mock implementation with some predefined locations
-            const coordinates = await geocodeLocation(userData.location);
+            const coordinates = await geocodeLocation(mergedProfile.location);
             if (coordinates) {
               setUserCoordinates(coordinates);
-              console.log('User coordinates set:', coordinates);
+              console.log('User coordinates set based on merged profile:', coordinates);
             }
           } catch (geocodeError) {
             console.error('Error geocoding user location:', geocodeError);
@@ -221,13 +277,48 @@ const JobSeekerHomeScreen: React.FC = () => {
         }
       });
 
-      console.log(`Successfully processed ${jobsData.length} jobs`);
+      console.log(`Successfully processed ${jobsData.length} jobs. Raw jobsData:`, JSON.stringify(jobsData.slice(0, 2), null, 2)); // Log first 2 jobs for brevity
       setRecentJobs(jobsData);
 
       // Find matching jobs for the user profile
       if (userProfile) {
-        const matchingJobs = findMatchingJobs(userProfile, jobsData);
-        console.log(`Found ${matchingJobs.length} matching jobs for user`);
+        console.log('Current userProfile state before creating profileForMatching:', JSON.stringify(userProfile, null, 2));
+        // Prepare the profile object for findMatchingJobs
+        const profileForMatching: any = {
+          // Pass direct skills if available; findMatchingJobs will extract from other fields if this is undefined or empty
+          skills: (userProfile.skills && userProfile.skills.length > 0) ? userProfile.skills : undefined,
+          
+          // Fields for skill extraction (if skills above are undefined/empty) and potentially direct use
+          jobSeeking: userProfile.jobSeekerType === 'formal' 
+            ? userProfile.formal_jobSeeking 
+            : userProfile.informal_jobSeeking,
+          experience: userProfile.experience || (userProfile.jobSeekerType === 'formal' 
+            ? userProfile.formal_previousRoles 
+            : userProfile.informal_workExperience),
+          education: userProfile.education || userProfile.formal_qualifications,
+          // findMatchingJobs expects certifications as a string for skill extraction
+          certifications: userProfile.certifications?.join(', ') || undefined, 
+          interests: userProfile.interests,
+
+          // Fields for hard filters
+          preferredLocation: userProfile.location,
+          // findMatchingJobs expects a single string for preferredJobType (fallback to jobSeekerType if preferredJobs is empty)
+          preferredJobType: userProfile.preferredJobs?.[0] || userProfile.jobSeekerType, 
+
+          // Fields for scoring
+          expectedSalary: userProfile.expectedSalary,
+          preferredWorkingHours: userProfile.preferredWorkingHours,
+          
+          // Pass any other top-level fields from userProfile that findMatchingJobs might expect
+          // For example, if findMatchingJobs uses userProfile.displayName directly:
+          // displayName: userProfile.displayName,
+        };
+
+        const matchingJobs = findMatchingJobs(profileForMatching, jobsData);
+        // Log the profile that was actually sent to matching function for easier debugging
+        console.log(`PROFILE SENT TO findMatchingJobs:`, JSON.stringify(profileForMatching, null, 2));
+        console.log(`JOBS SENT TO findMatchingJobs (${jobsData.length} jobs):`, JSON.stringify(jobsData.slice(0,2), null, 2)); // Log first 2 jobs
+        console.log(`MATCHING JOBS RETURNED by findMatchingJobs (${matchingJobs.length} jobs):`, JSON.stringify(matchingJobs.slice(0,2), null, 2)); // Log first 2 matched jobs
         setForYouJobs(matchingJobs);
       }
     } catch (error) {
@@ -264,22 +355,11 @@ const JobSeekerHomeScreen: React.FC = () => {
     return distance;
   };
 
-  const findMatchingJobs = (profile: UserProfile, jobs: Job[]): Job[] => {
-    if (!profile) return jobs.slice(0, 5);
-    console.log('Finding matching jobs for profile:', profile.id);
-    console.log('Total jobs to filter:', jobs.length);
-    
-    // Sort jobs by creation date (newest first)
-    const sortedJobs = [...jobs].sort((a, b) => {
-      return b.createdAt.getTime() - a.createdAt.getTime();
-    });
-    
-    // Take the 5 most recent jobs
-    const recentJobs = sortedJobs.slice(0, 5);
-    console.log(`Selected ${recentJobs.length} most recent jobs for For You section`);
-    
-    return recentJobs;
-  };
+  // Use advanced matching from utils/jobMatching
+  // import { findMatchingJobs } from '../../utils/jobMatching';
+  // (import statement will be added at the top)
+  // The new findMatchingJobs is imported and used below.
+
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);

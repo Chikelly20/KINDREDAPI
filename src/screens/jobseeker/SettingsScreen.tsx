@@ -7,7 +7,10 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
-  SafeAreaView
+  SafeAreaView,
+  TextInput,
+  Modal,
+  ActivityIndicator
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -18,10 +21,14 @@ import { Ionicons } from '@expo/vector-icons';
 type Props = NativeStackScreenProps<JobSeekerStackParamList, 'Settings'>;
 
 const SettingsScreen: React.FC<Props> = ({ navigation }) => {
-  const { signOut } = useAuth();
+  const { signOut, deleteAccount } = useAuth();
   const { theme, toggleTheme, themeType } = useTheme();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [locationEnabled, setLocationEnabled] = useState(true);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [password, setPassword] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
 
   const handleSignOut = async () => {
     try {
@@ -35,6 +42,30 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
       }
     }
   };
+  
+  const handleDeleteAccount = async () => {
+    // Reset error state
+    setPasswordError('');
+    
+    if (!password.trim()) {
+      setPasswordError('Password is required');
+      return;
+    }
+    
+    setIsDeleting(true);
+    
+    try {
+      await deleteAccount(password);
+      // If successful, the auth state will change and user will be redirected
+    } catch (error) {
+      // Error handling is done in the AuthContext
+      console.error('Delete account error:', error);
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteModalVisible(false);
+      setPassword('');
+    }
+  };
 
   const confirmSignOut = () => {
     Alert.alert(
@@ -43,6 +74,17 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Sign Out', onPress: handleSignOut, style: 'destructive' }
+      ]
+    );
+  };
+  
+  const confirmDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently lost.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', onPress: () => setIsDeleteModalVisible(true), style: 'destructive' }
       ]
     );
   };
@@ -171,12 +213,81 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
+        <View style={styles.dangerZone}>
+          <Text style={[styles.dangerZoneTitle, { color: theme.error }]}>Danger Zone</Text>
+          
+          <TouchableOpacity 
+            style={[styles.deleteAccountButton, { borderColor: theme.error }]}
+            onPress={confirmDeleteAccount}
+          >
+            <Ionicons name="trash-outline" size={24} color={theme.error} />
+            <Text style={[styles.deleteAccountButtonText, { color: theme.error }]}>Delete Account</Text>
+          </TouchableOpacity>
+        </View>
+
         <TouchableOpacity 
           style={[styles.signOutButton, { backgroundColor: theme.primary }]}
           onPress={confirmSignOut}
         >
           <Text style={[styles.signOutButtonText, { color: theme.secondary }]}>Sign Out</Text>
         </TouchableOpacity>
+        
+        {/* Delete Account Modal */}
+        <Modal
+          visible={isDeleteModalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setIsDeleteModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContainer, { backgroundColor: theme.card }]}>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>Confirm Account Deletion</Text>
+              
+              <Text style={[styles.modalText, { color: theme.text }]}>
+                Please enter your password to confirm account deletion. This action cannot be undone.
+              </Text>
+              
+              <TextInput
+                style={[styles.passwordInput, { borderColor: passwordError ? theme.error : theme.border, color: theme.text }]}
+                placeholder="Enter your password"
+                placeholderTextColor={theme.textLight}
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
+              />
+              
+              {passwordError ? (
+                <Text style={[styles.errorText, { color: theme.error }]}>{passwordError}</Text>
+              ) : null}
+              
+              <View style={styles.modalButtons}>
+                <TouchableOpacity 
+                  style={[styles.modalButton, styles.cancelButton, { borderColor: theme.border }]}
+                  onPress={() => {
+                    setIsDeleteModalVisible(false);
+                    setPassword('');
+                    setPasswordError('');
+                  }}
+                  disabled={isDeleting}
+                >
+                  <Text style={[styles.modalButtonText, { color: theme.text }]}>Cancel</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.modalButton, styles.deleteButton, { backgroundColor: theme.error }]}
+                  onPress={handleDeleteAccount}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? (
+                    <ActivityIndicator size="small" color={theme.secondary} />
+                  ) : (
+                    <Text style={[styles.modalButtonText, { color: theme.secondary }]}>Delete</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </SafeAreaView>
   );
@@ -247,8 +358,98 @@ const styles = StyleSheet.create({
   },
   signOutButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
+  dangerZone: {
+    marginTop: 24,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ff6b6b',
+    borderStyle: 'dashed',
+  },
+  dangerZoneTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  deleteAccountButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  deleteAccountButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    width: '100%',
+    borderRadius: 12,
+    padding: 24,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 24,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  passwordInput: {
+    width: '100%',
+    height: 50,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  errorText: {
+    fontSize: 14,
+    marginBottom: 16,
+    alignSelf: 'flex-start',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 16,
+  },
+  modalButton: {
+    flex: 1,
+    height: 50,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cancelButton: {
+    marginRight: 8,
+    borderWidth: 1,
+  },
+  deleteButton: {
+    marginLeft: 8,
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  }
 });
 
 export default SettingsScreen;

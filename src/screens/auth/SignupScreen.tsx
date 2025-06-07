@@ -9,7 +9,8 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert
+  Alert,
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -21,13 +22,14 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Signup'>;
 
 const SignupScreen: React.FC<Props> = ({ navigation, route }) => {
   const userType = route.params?.userType;
-  const { signUp } = useAuth();
+  const { signUp, signInWithGoogle } = useAuth();
   const { theme } = useTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const handleSignup = async () => {
     if (!name || !email || !password || !confirmPassword) {
@@ -77,7 +79,38 @@ const SignupScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   };
   
-  // Google sign-in removed to focus on email/password authentication
+  const handleGoogleSignup = async () => {
+    if (!userType) {
+      Alert.alert('Error', 'Please select a user type first');
+      navigation.navigate('UserType');
+      return;
+    }
+
+    try {
+      setIsGoogleLoading(true);
+      await signInWithGoogle(userType);
+      
+      // Navigate to the appropriate screen based on user type
+      if (userType === 'jobseeker') {
+        // For job seekers, always navigate to JobType screen first
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'JobType' }]
+        });
+      } else if (userType === 'employer') {
+        // For employers, navigate directly to the employer home screen
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'EmployerHome' }]
+        });
+      }
+    } catch (error) {
+      console.error('Google sign-up error:', error);
+      // Error handling is already done in the AuthContext
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -187,7 +220,33 @@ const SignupScreen: React.FC<Props> = ({ navigation, route }) => {
               )}
             </TouchableOpacity>
             
-            {/* Google sign-in removed */}
+            <View style={styles.dividerContainer}>
+              <View style={[styles.divider, { backgroundColor: theme.border }]} />
+              <Text style={[styles.dividerText, { color: theme.text }]}>OR</Text>
+              <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            </View>
+            
+            <TouchableOpacity
+              style={[
+                styles.googleButton,
+                { backgroundColor: theme.secondary, borderColor: theme.border }
+              ]}
+              onPress={handleGoogleSignup}
+              disabled={isGoogleLoading}
+            >
+              {isGoogleLoading ? (
+                <ActivityIndicator color={theme.primary} size="small" />
+              ) : (
+                <>
+                  <Image 
+                    source={require('../../assets/google-logo.png')} 
+                    style={styles.googleIcon} 
+                    resizeMode="contain"
+                  />
+                  <Text style={[styles.googleButtonText, { color: theme.text }]}>Continue with Google</Text>
+                </>
+              )}
+            </TouchableOpacity>
 
             <View style={styles.loginContainer}>
               <Text style={[styles.loginText, { color: theme.text }]}>
@@ -264,8 +323,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  // Google sign-in styles removed
   loginContainer: {
+    marginTop: 16,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -277,6 +336,37 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    paddingHorizontal: 10,
+    fontSize: 14,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  googleIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 10,
+  },
+  googleButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+  }
 });
 
-export default SignupScreen; 
+export default SignupScreen;

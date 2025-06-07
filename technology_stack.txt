@@ -1,0 +1,108 @@
+# KINDRED-FRESH Technology Stack
+
+## Core Technologies
+
+### React Native (v0.79.2)
+React Native is the foundation of our mobile application, allowing us to build a cross-platform mobile app using JavaScript and React. We're using version 0.79.2, which was released in early 2025 and provides significant performance improvements over previous versions, including better memory management and reduced bundle sizes. This version also includes improved support for the new architecture (Fabric and TurboModules).
+
+### React (v19.0.0)
+React 19.0.0 is the latest major version of React, offering improved performance with concurrent rendering features and better support for React Server Components. This version provides enhanced developer experience with better error messages and debugging tools, which helps us maintain and develop the application more efficiently.
+
+### Expo (v53.0.9)
+Expo provides a set of tools and services built around React Native, simplifying the development process. Version 53.0.9 includes the latest SDK features while maintaining stability. We use Expo for:
+- Simplified build process
+- Over-the-air updates
+- Access to native device features through a unified JavaScript API
+- Development tools that speed up the iteration cycle
+
+## Navigation
+
+### React Navigation (v7.x)
+React Navigation is the standard routing and navigation solution for React Native apps. We're using version 7, which offers:
+- Native Stack Navigator (v7.3.12): Provides native navigation transitions for better performance
+- Bottom Tabs Navigator (v7.3.12): Powers our main tab-based navigation
+- Stack Navigator (v7.3.2): Handles screen stacking for complex navigation flows
+
+Version 7 brings significant performance improvements and better TypeScript support compared to previous versions.
+
+## Backend & Data Management
+
+### Firebase (v9.6.11)
+Firebase provides our backend-as-a-service solution, offering:
+- Authentication: Email/password and Google Sign-In
+- Firestore: Real-time NoSQL database for storing user data, job listings, and applications
+- Cloud Functions: Serverless functions for backend logic
+- Storage: For storing user profile images and documents
+
+We're using version 9.6.11, which uses the modular API approach, resulting in smaller bundle sizes through tree-shaking.
+
+### Firebase Admin (v13.3.0)
+Firebase Admin SDK is used for server-side operations, particularly in our K-NN job matching API. Version 13.3.0 provides enhanced security features and better TypeScript support.
+
+## Storage & State Management
+
+### Async Storage (v2.1.2)
+React Native Async Storage provides a simple key-value storage system for persistent local data storage. Version 2.1.2 offers improved performance and better TypeScript support.
+
+## Authentication & Identity
+
+### Google Sign-In (v14.0.0)
+This package enables Google authentication in our app. Version 14.0.0 includes support for the latest Google authentication protocols and improved error handling.
+
+### Expo Auth Session (v6.1.5)
+Used for handling OAuth authentication flows in a secure way, particularly for web-based authentication. This version is compatible with our Expo SDK version.
+
+## UI Components & Styling
+
+### Expo Vector Icons (v14.0.0)
+Provides a comprehensive set of pre-made icons for our UI. Version 14.0.0 includes the latest icon sets and is optimized for performance.
+
+### React Native Safe Area Context (v5.4.0)
+Handles safe area insets on different devices, ensuring our UI respects notches, home indicators, and other device-specific display features.
+
+### React Native Screens (v4.10.0)
+Improves navigation performance by using native navigation container components. Version 4.10.0 includes optimizations for the latest React Native version.
+
+## Notifications & Device Features
+
+### Expo Notifications (v0.31.2)
+Provides a unified API for handling push notifications across platforms. This version includes improved background notification handling.
+
+### Expo Device (v7.1.4)
+Allows us to access device information and capabilities, which we use for adapting the UI to different devices and for analytics.
+
+## Development Tools
+
+### Babel (v7.20.0)
+Transpiles modern JavaScript features to ensure compatibility across different devices. Version 7.20.0 provides fast compilation and supports the latest ECMAScript features.
+
+### TypeScript (implied by @types dependencies)
+We use TypeScript for static type checking, which helps catch errors during development and provides better IDE support. Our @types dependencies (cors v2.8.18, express v5.0.1) indicate we're using TypeScript for both client and server code.
+
+## API & Server
+
+### Express (implied by @types/express v5.0.1)
+Express is used for our K-NN job matching API server. Version 5.0.1 includes improved performance and better async/await support.
+
+### CORS (implied by @types/cors v2.8.18)
+Used to handle Cross-Origin Resource Sharing in our API, allowing secure communication between our mobile app and backend services.
+
+## Version Selection Strategy
+
+Our version selection strategy balances cutting-edge features with stability:
+
+1. **Core Technologies (React, React Native, Expo)**: We use the latest stable versions to benefit from performance improvements and new features.
+
+2. **Firebase**: We're using a slightly older version (9.6.11) because it's been thoroughly tested with our application architecture and provides all the features we need without introducing potential compatibility issues.
+
+3. **Navigation Libraries**: We've adopted the latest major version (v7) of React Navigation to take advantage of performance improvements and better TypeScript integration.
+
+4. **Support Libraries**: For smaller utility libraries, we generally use the latest versions that are compatible with our Expo SDK version.
+
+This approach allows us to leverage modern features while maintaining a stable application foundation. We periodically evaluate newer versions for potential upgrades based on:
+- Security improvements
+- Performance enhancements
+- New features that align with our roadmap
+- Community adoption and support
+
+The specific versions chosen represent a snapshot of our development environment as of May 2025, optimized for the current state of the React Native ecosystem.

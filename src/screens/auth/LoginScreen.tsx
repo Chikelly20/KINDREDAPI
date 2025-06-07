@@ -9,7 +9,8 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert
+  Alert,
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -22,11 +23,12 @@ import { db } from '../../services/firebase';
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
-  const { signIn, user } = useAuth();
+  const { signIn, signInWithGoogle, user } = useAuth();
   const { theme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   // Navigate to the appropriate screen based on user type
   useEffect(() => {
@@ -58,6 +60,19 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return Boolean(emailRegex.test(email));
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setIsGoogleLoading(true);
+      await signInWithGoogle();
+      // Navigation will be handled by the useEffect hook
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      // Error handling is already done in the AuthContext
+    } finally {
+      setIsGoogleLoading(false);
+    }
   };
 
   const handleLogin = async () => {
@@ -192,6 +207,34 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 <Text style={[styles.buttonText, { color: theme.secondary }]}>Sign In</Text>
               )}
             </TouchableOpacity>
+            
+            <View style={styles.dividerContainer}>
+              <View style={[styles.divider, { backgroundColor: theme.border }]} />
+              <Text style={[styles.dividerText, { color: theme.text }]}>OR</Text>
+              <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            </View>
+            
+            <TouchableOpacity
+              style={[
+                styles.googleButton,
+                { backgroundColor: theme.secondary, borderColor: theme.border }
+              ]}
+              onPress={handleGoogleLogin}
+              disabled={isGoogleLoading}
+            >
+              {isGoogleLoading ? (
+                <ActivityIndicator color={theme.primary} size="small" />
+              ) : (
+                <>
+                  <Image 
+                    source={require('../../assets/google-logo.png')} 
+                    style={styles.googleIcon} 
+                    resizeMode="contain"
+                  />
+                  <Text style={[styles.googleButtonText, { color: theme.text }]}>Continue with Google</Text>
+                </>
+              )}
+            </TouchableOpacity>
 
             <View style={styles.signupContainer}>
               <Text style={[styles.signupText, { color: theme.text }]}>
@@ -286,6 +329,37 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    paddingHorizontal: 10,
+    fontSize: 14,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  googleIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 10,
+  },
+  googleButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+  }
 });
 
 export default LoginScreen;

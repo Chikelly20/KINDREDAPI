@@ -39,7 +39,7 @@ const JobSeekerTabNavigator = () => {
         component={HomeScreen} 
         options={{ 
           title: 'Home',
-          headerTitle: 'Job Listings'
+          headerTitle: 'KINDRED'
         }} 
       />
       <Tab.Screen 

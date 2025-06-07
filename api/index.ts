@@ -32,12 +32,14 @@ async function handleStartChat(req: Request, res: Response) {
   }
 }
 
+import { getAllJobs } from './services/firestore';
+
 async function handleGetJobs(req: Request, res: Response) {
   try {
-    // TODO: Implement job fetching logic
-    const jobs = [];
+    const jobs = await getAllJobs();
     res.status(200).json(jobs);
   } catch (error) {
+    console.error('Error fetching jobs:', error);
     res.status(500).json({ error: 'Failed to fetch jobs' });
   }
 }

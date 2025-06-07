@@ -2,6 +2,11 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Alert, Platform } from 'react-native';
 import { auth, db, firestore } from '../services/firebase';
 import firebase from 'firebase/compat/app';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+
+// Register the redirect URI handler for web browser authentication
+WebBrowser.maybeCompleteAuthSession();
 
 type UserType = 'jobseeker' | 'employer' | null;
 type JobSeekerType = 'formal' | 'informal' | null;
@@ -20,10 +25,12 @@ interface AuthContextType {
   isLoading: boolean;
   signUp: (email: string, password: string, name: string, userType?: UserType) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: (userType?: UserType) => Promise<void>;
   signOut: () => Promise<void>;
   setUserType: (userType: UserType) => Promise<void>;
   setJobSeekerType: (jobSeekerType: JobSeekerType) => Promise<void>;
   updateUserProfile: (data: Partial<UserData>) => Promise<void>;
+  deleteAccount: (password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,6 +50,24 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Initialize Google Auth Request
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: '449864304937-1oi9k9ql8t3vdmf6j5hn1v2c3g4qcpbm.apps.googleusercontent.com', // Web client ID
+    iosClientId: 'IOS_CLIENT_ID', // Replace with your iOS client ID if needed
+    androidClientId: 'ANDROID_CLIENT_ID', // Replace with your Android client ID if needed
+  });
+  
+  // Handle Google Auth Response
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { id_token } = response.params;
+      const credential = firebase.auth.GoogleAuthProvider.credential(id_token);
+      auth.signInWithCredential(credential).catch(error => {
+        console.error('Error signing in with Google credential:', error);
+      });
+    }
+  }, [response]);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
@@ -198,7 +223,62 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Google sign-in removed to fix compatibility issues
+  const signInWithGoogle = async (userType: UserType = null) => {
+    try {
+      // Start the Google Sign-In flow
+      const result = await promptAsync();
+      
+      if (result.type !== 'success') {
+        throw new Error('Google sign-in was cancelled or failed');
+      }
+      
+      // The actual authentication is handled in the useEffect hook above
+      // that watches for response changes
+      
+      // We'll update the user type if provided
+      if (userType && auth.currentUser) {
+        const userRef = db.collection('users').doc(auth.currentUser.uid);
+        const userDoc = await userRef.get();
+        
+        if (!userDoc.exists) {
+          // For new users, create a profile with the provided userType
+          await userRef.set({
+            email: auth.currentUser.email,
+            displayName: auth.currentUser.displayName,
+            photoURL: auth.currentUser.photoURL,
+            userType: userType,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            authProvider: 'google'
+          });
+        } else {
+          // If user exists but userType is not set, update it
+          const userData = userDoc.data();
+          if (!userData?.userType) {
+            await userRef.update({ userType });
+          }
+        }
+      }
+      
+      return;
+    } catch (error: any) {
+      console.error('Google sign-in error:', error);
+      
+      // Handle specific errors
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        Alert.alert(
+          'Account Exists', 
+          'An account already exists with the same email address but different sign-in credentials. Please sign in using the original method.'
+        );
+      } else {
+        Alert.alert(
+          'Sign In Error', 
+          'Failed to sign in with Google. Please try again later.'
+        );
+      }
+      
+      throw error;
+    }
+  };
 
   const signOut = async () => {
     try {
@@ -245,15 +325,103 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const deleteAccount = async (password: string) => {
+    if (!user || !auth.currentUser) return;
+    
+    try {
+      // Re-authenticate the user before deleting the account
+      const credential = firebase.auth.EmailAuthProvider.credential(
+        auth.currentUser.email || '', 
+        password
+      );
+      
+      await auth.currentUser.reauthenticateWithCredential(credential);
+      
+      // Delete user data from Firestore based on user type
+      const batch = db.batch();
+      
+      // Delete user document
+      const userRef = db.collection('users').doc(user.uid);
+      batch.delete(userRef);
+      
+      // Delete related data based on user type
+      if (user.userType === 'jobseeker') {
+        // Delete job applications
+        const applicationsSnapshot = await db.collection('applications')
+          .where('jobSeekerId', '==', user.uid)
+          .get();
+          
+        applicationsSnapshot.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+        
+        // Delete job seeker profile
+        const profileSnapshot = await db.collection('jobSeekerProfiles')
+          .where('userId', '==', user.uid)
+          .get();
+          
+        profileSnapshot.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+      } else if (user.userType === 'employer') {
+        // Delete job postings
+        const jobsSnapshot = await db.collection('jobs')
+          .where('employerId', '==', user.uid)
+          .get();
+          
+        jobsSnapshot.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+        
+        // Delete company profile
+        const companySnapshot = await db.collection('companies')
+          .where('ownerId', '==', user.uid)
+          .get();
+          
+        companySnapshot.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+      }
+      
+      // Commit the batch deletion
+      await batch.commit();
+      
+      // Finally, delete the user authentication account
+      await auth.currentUser.delete();
+      
+      // User will be automatically signed out and the onAuthStateChanged listener will update the state
+    } catch (error: any) {
+      console.error('Error deleting account:', error);
+      
+      if (error.code === 'auth/requires-recent-login') {
+        Alert.alert(
+          'Authentication Required', 
+          'Please sign out and sign in again before deleting your account.'
+        );
+      } else if (error.code === 'auth/wrong-password') {
+        Alert.alert('Incorrect Password', 'The password you entered is incorrect.');
+      } else {
+        Alert.alert(
+          'Error', 
+          'Failed to delete your account. Please try again later.'
+        );
+      }
+      
+      throw error;
+    }
+  };
+
   const value = {
     user,
     isLoading,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
     setUserType,
     setJobSeekerType,
-    updateUserProfile
+    updateUserProfile,
+    deleteAccount
   };
 
   return (
